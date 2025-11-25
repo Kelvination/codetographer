@@ -1,0 +1,130 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "title": "CodeGrapher Extension Architecture",
+    "description": "How the VS Code extension loads and displays .cgraph files",
+    "generated": "2025-11-25T00:00:00Z",
+    "scope": "extension/src"
+  },
+  "groups": [
+    {
+      "id": "extension",
+      "label": "VS Code Extension",
+      "description": "Extension host running in Node.js"
+    },
+    {
+      "id": "webview",
+      "label": "Webview (React)",
+      "description": "Browser-based React app running in iframe"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "extension-activate",
+      "label": "activate()",
+      "type": "function",
+      "description": "VS Code extension entry point. Called when the extension is first activated. Registers the custom editor provider for .cgraph files.",
+      "location": {
+        "file": "extension/src/extension.ts",
+        "startLine": 4,
+        "endLine": 6
+      },
+      "group": "extension"
+    },
+    {
+      "id": "resolve-editor",
+      "label": "resolveCustomTextEditor()",
+      "type": "method",
+      "description": "Called by VS Code when a .cgraph file is opened. Sets up the webview panel, loads the React app, and establishes message passing between the extension and webview.",
+      "location": {
+        "file": "extension/src/cgraphEditorProvider.ts",
+        "startLine": 19,
+        "endLine": 64
+      },
+      "group": "extension"
+    },
+    {
+      "id": "navigate-location",
+      "label": "navigateToLocation()",
+      "type": "method",
+      "description": "Opens a file in VS Code editor and navigates to a specific line. Highlights the target range temporarily to draw attention to the code location.",
+      "location": {
+        "file": "extension/src/cgraphEditorProvider.ts",
+        "startLine": 66,
+        "endLine": 120
+      },
+      "group": "extension"
+    },
+    {
+      "id": "webview-app",
+      "label": "App",
+      "type": "module",
+      "description": "React root component that orchestrates the graph viewer. Connects to VS Code via useVSCodeApi hook and renders the GraphCanvas with parsed .cgraph data.",
+      "location": {
+        "file": "webview/src/App.tsx",
+        "startLine": 1,
+        "endLine": 30
+      },
+      "group": "webview"
+    },
+    {
+      "id": "graph-canvas",
+      "label": "GraphCanvas",
+      "type": "module",
+      "description": "Renders the interactive graph using React Flow. Uses ELK for automatic hierarchical layout. Handles node click events for highlighting and navigation.",
+      "location": {
+        "file": "webview/src/components/GraphCanvas.tsx",
+        "startLine": 1,
+        "endLine": 210
+      },
+      "group": "webview"
+    },
+    {
+      "id": "code-node",
+      "label": "CodeNode",
+      "type": "module",
+      "description": "Custom React Flow node component. Displays function/class name, file location, and expandable description. Color-coded icon indicates the node type.",
+      "location": {
+        "file": "webview/src/components/CodeNode.tsx",
+        "startLine": 1,
+        "endLine": 82
+      },
+      "group": "webview"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "extension-activate",
+      "target": "resolve-editor",
+      "type": "uses"
+    },
+    {
+      "id": "e2",
+      "source": "resolve-editor",
+      "target": "webview-app",
+      "type": "uses"
+    },
+    {
+      "id": "e3",
+      "source": "resolve-editor",
+      "target": "navigate-location",
+      "type": "calls"
+    },
+    {
+      "id": "e4",
+      "source": "webview-app",
+      "target": "graph-canvas",
+      "type": "imports"
+    },
+    {
+      "id": "e5",
+      "source": "graph-canvas",
+      "target": "code-node",
+      "type": "imports"
+    }
+  ],
+  "layout": {
+    "direction": "TB"
+  }
+}
