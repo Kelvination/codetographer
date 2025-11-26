@@ -32,7 +32,6 @@ export interface CGraphGroup {
 
 export interface CGraphLayout {
   direction?: 'TB' | 'LR' | 'BT' | 'RL';
-  type?: 'layered' | 'force' | 'stress'; // Layout algorithm type
 }
 
 export interface CGraphLegendItem {

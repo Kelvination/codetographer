@@ -3,11 +3,13 @@
     Oxygen, Ubuntu, Cantarell, sans-serif;
   --vscode-editor-background: #1e1e1e;
   --vscode-editor-foreground: #d4d4d4;
-  --vscode-panel-border: #454545;
+  --vscode-panel-border: #3c3c3c;
   --vscode-focusBorder: #007fd4;
   --vscode-button-background: #0e639c;
-  --vscode-descriptionForeground: #8b8b8b;
+  --vscode-descriptionForeground: #969696;
   --vscode-editorWidget-background: #252526;
+  --node-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --node-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -30,27 +32,29 @@ body {
 }
 
 .header {
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-editorWidget-background);
+  background: linear-gradient(180deg, #2d2d2d 0%, var(--vscode-editorWidget-background) 100%);
 }
 
 .header h1 {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
 .header .description {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--vscode-descriptionForeground);
   margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .header .hint {
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .loading-container,
@@ -80,134 +84,158 @@ body {
   display: none;
 }
 
+.react-flow__background {
+  background: var(--vscode-editor-background);
+}
+
 .react-flow__minimap {
-  background: var(--vscode-editorWidget-background);
+  background: rgba(37, 37, 38, 0.95);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .react-flow__controls {
-  background: var(--vscode-editorWidget-background);
+  background: rgba(37, 37, 38, 0.95);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .react-flow__controls-button {
-  background: var(--vscode-editorWidget-background);
+  background: transparent;
+  border: none;
   border-bottom: 1px solid var(--vscode-panel-border);
-  fill: var(--vscode-editor-foreground);
+  fill: var(--vscode-descriptionForeground);
+  width: 28px;
+  height: 28px;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
 }
 
 .react-flow__controls-button:hover {
   background: var(--vscode-button-background);
+  fill: #fff;
 }
 
+/* Edge styles */
 .react-flow__edge-path {
-  stroke: var(--vscode-descriptionForeground);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: var(--vscode-focusBorder);
 }
 
-/* Code Node styles - Redesigned */
+/* Code Node styles - Professional design */
 .code-node {
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--vscode-editorWidget-background);
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2a2a2a 0%, var(--vscode-editorWidget-background) 100%);
   border: 1px solid var(--vscode-panel-border);
   font-family: var(--vscode-font-family);
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 160px;
+  transition: all 0.2s ease;
+  min-width: 180px;
   max-width: 280px;
+  box-shadow: var(--node-shadow);
 }
 
 .code-node:hover {
-  border-color: var(--vscode-focusBorder);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--node-shadow-hover);
+  transform: translateY(-1px);
 }
 
 .code-node.selected {
   border-color: var(--vscode-focusBorder);
-  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.3), var(--node-shadow-hover);
 }
 
 .code-node.dimmed {
-  opacity: 0.3;
+  opacity: 0.25;
+  filter: grayscale(0.5);
 }
 
 .code-node.expanded {
-  max-width: 350px;
+  max-width: 380px;
 }
 
 /* Node header with icon, label, and expand button */
 .node-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .node-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: #1e1e1e;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #1a1a1a;
   font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .node-label {
   flex: 1;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #e8e8e8;
 }
 
 .expand-btn {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--vscode-descriptionForeground);
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 14px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
 .expand-btn:hover {
-  background: var(--vscode-panel-border);
+  background: rgba(255, 255, 255, 0.12);
   color: var(--vscode-editor-foreground);
 }
 
 /* Brief summary - always visible */
 .node-summary {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
-  line-height: 1.3;
-  opacity: 0.9;
+  line-height: 1.4;
 }
 
 /* File location line */
 .node-location {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 8px;
   font-size: 10px;
   color: var(--vscode-descriptionForeground);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .file-name {
@@ -218,9 +246,9 @@ body {
 
 .line-ref {
   flex-shrink: 0;
-  padding: 1px 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   font-size: 10px;
 }
@@ -228,12 +256,12 @@ body {
 /* Expandable description */
 .node-description {
   display: none;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--vscode-panel-border);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
-  line-height: 1.4;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -242,90 +270,100 @@ body {
   display: block;
 }
 
-/* Handle styling */
+/* Handle styling - invisible but functional */
 .react-flow__handle {
-  width: 8px;
-  height: 8px;
-  background: var(--vscode-panel-border);
-  border: 2px solid var(--vscode-editorWidget-background);
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: none;
   opacity: 0;
 }
 
 .react-flow__handle-top {
-  top: -4px;
+  top: -5px;
 }
 
 .react-flow__handle-bottom {
-  bottom: -4px;
+  bottom: -5px;
 }
 
 .react-flow__handle-left {
-  left: -4px;
+  left: -5px;
 }
 
 .react-flow__handle-right {
-  right: -4px;
+  right: -5px;
 }
 
-/* Group Node styles */
+/* Group Node styles - Clean containers */
 .group-node {
-  border-radius: 12px;
-  border: 2px dashed;
+  border-radius: 16px;
+  border: 2px solid;
   pointer-events: none;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
 }
 
 .group-label {
   position: absolute;
-  top: 12px;
-  left: 16px;
-  font-size: 13px;
-  font-weight: 600;
+  top: 14px;
+  left: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--vscode-editor-foreground);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
-/* Legend styles */
+/* Legend styles - Floating panel */
 .graph-legend {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
-  background: var(--vscode-editorWidget-background);
+  bottom: 20px;
+  left: 20px;
+  background: rgba(37, 37, 38, 0.95);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 14px 18px;
   font-family: var(--vscode-font-family);
   font-size: 12px;
   z-index: 10;
-  max-width: 200px;
+  max-width: 220px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
 }
 
 .legend-title {
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
   color: var(--vscode-editor-foreground);
+  opacity: 0.8;
 }
 
 .legend-items {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .legend-color {
-  width: 24px;
-  height: 4px;
+  width: 28px;
+  height: 3px;
   border-radius: 2px;
   flex-shrink: 0;
 }
 
 .legend-label {
   color: var(--vscode-descriptionForeground);
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

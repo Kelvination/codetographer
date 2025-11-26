@@ -10,6 +10,9 @@ interface GroupNodeData {
 }
 
 function GroupNodeComponent({ data }: NodeProps<GroupNodeData>) {
+  // Extract the base color from rgba and create a more visible border
+  const borderColor = data.color.replace(/[\d.]+\)$/, '0.5)');
+
   return (
     <div
       className="group-node"
@@ -17,7 +20,7 @@ function GroupNodeComponent({ data }: NodeProps<GroupNodeData>) {
         width: data.width,
         height: data.height,
         backgroundColor: data.color,
-        borderColor: data.color.replace('0.12', '0.4'),
+        borderColor: borderColor,
       }}
     >
       <div className="group-label">{data.label}</div>

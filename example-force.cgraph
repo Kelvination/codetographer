@@ -153,6 +153,6 @@
     }
   ],
   "layout": {
-    "type": "force"
+    "direction": "LR"
   }
 }

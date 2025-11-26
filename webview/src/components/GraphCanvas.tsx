@@ -52,72 +52,46 @@ function getNodeDimensions(label: string, description?: string): { width: number
   return { width: baseWidth, height: baseHeight };
 }
 
-// Get layout options based on layout type
-function getLayoutOptions(
-  layoutType: 'layered' | 'force' | 'stress',
-  direction: string
-): Record<string, string> {
-  if (layoutType === 'force') {
-    // Force-directed layout - compact, web-like
-    // Uses layered algorithm with loose settings for more organic feel
-    return {
-      'elk.algorithm': 'layered',
-      'elk.direction': direction,
-      'elk.layered.spacing.nodeNodeBetweenLayers': '150',
-      'elk.spacing.nodeNode': '100',
-      'elk.spacing.edgeNode': '60',
-      'elk.spacing.edgeEdge': '30',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-      'elk.layered.wrapping.strategy': 'MULTI_EDGE',
-      'elk.layered.wrapping.additionalEdgeSpacing': '40',
-      'elk.aspectRatio': '1.6',
-      'elk.edgeRouting': 'ORTHOGONAL',
-    };
-  } else if (layoutType === 'stress') {
-    // Stress-based layout with edge routing via separate pass
-    // Note: stress algorithm doesn't support edge routing directly,
-    // so we increase spacing to minimize overlaps
-    return {
-      'elk.algorithm': 'stress',
-      'elk.stress.desiredEdgeLength': '250',
-      'elk.stress.iterations': '400',
-      'elk.spacing.nodeNode': '150',
-      'elk.spacing.edgeNode': '80',
-    };
-  } else {
-    // Default: layered layout - hierarchical tree
-    return {
-      'elk.algorithm': 'layered',
-      'elk.direction': direction,
-      'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-      'elk.spacing.nodeNode': '80',
-      'elk.spacing.edgeNode': '50',
-      'elk.spacing.edgeEdge': '25',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
-      'elk.layered.feedbackEdges': 'true',
-      'elk.layered.wrapping.strategy': 'OFF',
-      'elk.layered.thoroughness': '10',
-      'elk.layered.mergeEdges': 'false',
-      'elk.nodeLabels.placement': 'INSIDE V_CENTER H_CENTER',
-      'elk.edgeRouting': 'ORTHOGONAL',
-    };
-  }
+// Get layout options - optimized for clean, professional graphs
+function getLayoutOptions(direction: string): Record<string, string> {
+  return {
+    'elk.algorithm': 'layered',
+    'elk.direction': direction,
+    // Generous spacing to prevent edge-node overlaps
+    'elk.layered.spacing.nodeNodeBetweenLayers': '120',
+    'elk.spacing.nodeNode': '50',
+    'elk.spacing.edgeNode': '50',
+    'elk.spacing.edgeEdge': '25',
+    // Edge-to-label spacing
+    'elk.spacing.edgeLabel': '15',
+    // Advanced placement strategies for cleaner layouts
+    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+    'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+    'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
+    // Orthogonal edge routing with proper spacing
+    'elk.edgeRouting': 'ORTHOGONAL',
+    'elk.layered.edgeRouting.selfLoopDistribution': 'EQUALLY',
+    // Better handling of edges - avoid node overlaps
+    'elk.layered.feedbackEdges': 'true',
+    'elk.layered.mergeEdges': 'false',
+    'elk.layered.thoroughness': '20',
+    // Consider node labels in layout
+    'elk.nodeLabels.placement': 'INSIDE V_CENTER H_CENTER',
+    // Wrapping for better aspect ratio
+    'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+    'elk.layered.wrapping.additionalEdgeSpacing': '30',
+  };
 }
 
 async function layoutGraph(
   graph: CGraph
 ): Promise<{ nodes: Node[]; edges: Edge[] }> {
   const direction = graph.layout?.direction || 'TB';
-  const layoutType = graph.layout?.type || 'layered';
   const hasGroups = graph.groups && graph.groups.length > 0;
 
   // Build ELK graph structure
   let elkGraph: ElkNode;
-  const baseLayoutOptions = getLayoutOptions(layoutType, direction);
+  const baseLayoutOptions = getLayoutOptions(direction);
 
   if (hasGroups && graph.groups) {
     // Create hierarchical structure with groups as parent nodes
@@ -151,7 +125,7 @@ async function layoutGraph(
           id: `group-${group.id}`,
           layoutOptions: {
             'elk.padding': '[top=50,left=25,bottom=25,right=25]',
-            ...getLayoutOptions(layoutType, direction),
+            ...getLayoutOptions(direction),
           },
           children: groupNodes.map((node) => {
             const dims = getNodeDimensions(node.label, node.description);
@@ -276,8 +250,7 @@ async function layoutGraph(
     });
   });
 
-  // Create edges with handle positions based on relative node positions
-  const isStressLayout = layoutType === 'stress';
+  // Create edges with smart handle selection based on node positions
   const isVertical = direction === 'TB' || direction === 'BT';
 
   const edges: Edge[] = graph.edges.map((edge) => {
@@ -292,35 +265,16 @@ async function layoutGraph(
       const dx = targetPos.x - sourcePos.x;
       const dy = targetPos.y - sourcePos.y;
 
-      if (isStressLayout) {
-        // For stress layouts, connect to nearest sides based on position
-        if (Math.abs(dx) > Math.abs(dy)) {
-          if (dx > 0) {
-            sourceHandle = 'right-source';
-            targetHandle = 'left';
-          } else {
-            sourceHandle = 'left-source';
-            targetHandle = 'right';
-          }
-        } else {
-          if (dy > 0) {
-            sourceHandle = 'bottom-source';
-            targetHandle = 'top';
-          } else {
-            sourceHandle = 'top-source';
-            targetHandle = 'bottom';
-          }
-        }
-      } else if (isVertical) {
-        // For vertical layouts, prefer top/bottom but handle sideways too
+      if (isVertical) {
+        // For vertical layouts (TB/BT), prefer top/bottom connections
         if (dy > 30) {
-          // Target is below - standard flow
+          // Target is below - standard downward flow
           sourceHandle = 'bottom-source';
           targetHandle = 'top';
         } else if (dy < -30) {
-          // Target is above - use side handles to curve around
-          sourceHandle = 'left-source';
-          targetHandle = 'left';
+          // Target is above - upward connection (feedback edge)
+          sourceHandle = 'top-source';
+          targetHandle = 'bottom';
         } else if (dx > 0) {
           // Same level, target to the right
           sourceHandle = 'right-source';
@@ -331,15 +285,15 @@ async function layoutGraph(
           targetHandle = 'right';
         }
       } else {
-        // For horizontal layouts, prefer left/right but handle vertical too
+        // For horizontal layouts (LR/RL), prefer left/right connections
         if (dx > 30) {
-          // Target is to the right - standard flow
+          // Target is to the right - standard rightward flow
           sourceHandle = 'right-source';
           targetHandle = 'left';
         } else if (dx < -30) {
-          // Target is to the left - use top handles to curve around
-          sourceHandle = 'top-source';
-          targetHandle = 'top';
+          // Target is to the left - leftward connection (feedback edge)
+          sourceHandle = 'left-source';
+          targetHandle = 'right';
         } else if (dy > 0) {
           // Same column, target below
           sourceHandle = 'bottom-source';
@@ -352,20 +306,19 @@ async function layoutGraph(
       }
     }
 
-    // Style based on importance (primary = thick/bright, tertiary = thin/dim)
+    // Style based on importance (primary = prominent, tertiary = subtle)
     const importance = edge.importance || 'secondary';
-    const strokeWidth = importance === 'primary' ? 3 : importance === 'tertiary' ? 1.5 : 2;
-    const strokeOpacity = importance === 'primary' ? 1 : importance === 'tertiary' ? 0.5 : 0.8;
+    const strokeWidth = importance === 'primary' ? 2.5 : importance === 'tertiary' ? 1.5 : 2;
 
     // Color: custom color takes precedence, otherwise based on edge type
     const defaultEdgeColors: Record<string, string> = {
-      calls: 'var(--vscode-charts-blue)',
-      imports: 'var(--vscode-descriptionForeground)',
-      extends: 'var(--vscode-charts-green)',
-      implements: 'var(--vscode-charts-purple)',
-      uses: 'var(--vscode-descriptionForeground)',
+      calls: '#4fc1ff',
+      imports: '#8b8b8b',
+      extends: '#4ec9b0',
+      implements: '#c586c0',
+      uses: '#8b8b8b',
     };
-    const strokeColor = edge.color || defaultEdgeColors[edge.type] || 'var(--vscode-descriptionForeground)';
+    const strokeColor = edge.color || defaultEdgeColors[edge.type] || '#8b8b8b';
 
     return {
       id: edge.id,
@@ -374,19 +327,18 @@ async function layoutGraph(
       sourceHandle,
       targetHandle,
       type: 'smoothstep',
-      animated: true, // All edges animated to show flow direction
+      animated: false, // Cleaner static appearance
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: importance === 'primary' ? 16 : importance === 'tertiary' ? 12 : 14,
-        height: importance === 'primary' ? 16 : importance === 'tertiary' ? 12 : 14,
+        width: 12,
+        height: 12,
+        color: strokeColor,
       },
       style: {
         strokeWidth,
         stroke: strokeColor,
-        opacity: strokeOpacity,
       },
       data: { label: edge.label, edgeType: edge.type, importance },
-      zIndex: importance === 'primary' ? 1 : importance === 'tertiary' ? -1 : 0,
     };
   });
 
