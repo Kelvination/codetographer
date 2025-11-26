@@ -1,6 +1,8 @@
 # Codetographer
 
-Interactive code flow visualization for VS Code. Similar to Windsurf Codemaps.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Interactive code flow visualization for VS Code.
 
 ## Features
 
@@ -140,6 +142,15 @@ npm run build    # Build everything
 npm run watch    # Watch mode for development
 npm run package  # Create .vsix package
 ```
+
+### Publishing to VS Code Marketplace
+
+To publish to the VS Code Marketplace:
+
+1. Create a publisher at https://marketplace.visualstudio.com/manage
+2. Update `extension/package.json` and replace `"publisher": "your-publisher-id"` with your publisher ID
+3. Run `npm run package` to create the `.vsix` file
+4. Upload via the marketplace or use `vsce publish`
 
 ### Testing in VS Code
 
