@@ -57,21 +57,21 @@ function getLayoutOptions(direction: string): Record<string, string> {
   return {
     'elk.algorithm': 'layered',
     'elk.direction': direction,
-    // Generous spacing to prevent edge-node overlaps
+    // Spacing optimized for clarity without excessive whitespace
     'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-    'elk.spacing.nodeNode': '40',
-    'elk.spacing.edgeNode': '30',
-    'elk.spacing.edgeEdge': '15',
+    'elk.spacing.nodeNode': '35',
+    'elk.spacing.edgeNode': '25',
+    'elk.spacing.edgeEdge': '12',
     // Advanced placement strategies for cleaner layouts
     'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
     'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
     'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
-    // Orthogonal edge routing
+    // Orthogonal edge routing for clean right-angle connections
     'elk.edgeRouting': 'ORTHOGONAL',
-    // Better handling of edges
+    // Edge handling
     'elk.layered.feedbackEdges': 'true',
     'elk.layered.mergeEdges': 'false',
-    'elk.layered.thoroughness': '10',
+    'elk.layered.thoroughness': '7',
   };
 }
 

@@ -383,7 +383,6 @@
     ]
   },
   "layout": {
-    "direction": "TB",
-    "type": "layered"
+    "direction": "LR"
   }
 }
