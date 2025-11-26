@@ -58,28 +58,20 @@ function getLayoutOptions(direction: string): Record<string, string> {
     'elk.algorithm': 'layered',
     'elk.direction': direction,
     // Generous spacing to prevent edge-node overlaps
-    'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-    'elk.spacing.nodeNode': '50',
-    'elk.spacing.edgeNode': '50',
-    'elk.spacing.edgeEdge': '25',
-    // Edge-to-label spacing
-    'elk.spacing.edgeLabel': '15',
+    'elk.layered.spacing.nodeNodeBetweenLayers': '80',
+    'elk.spacing.nodeNode': '40',
+    'elk.spacing.edgeNode': '30',
+    'elk.spacing.edgeEdge': '15',
     // Advanced placement strategies for cleaner layouts
     'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
     'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
     'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
-    // Orthogonal edge routing with proper spacing
+    // Orthogonal edge routing
     'elk.edgeRouting': 'ORTHOGONAL',
-    'elk.layered.edgeRouting.selfLoopDistribution': 'EQUALLY',
-    // Better handling of edges - avoid node overlaps
+    // Better handling of edges
     'elk.layered.feedbackEdges': 'true',
     'elk.layered.mergeEdges': 'false',
-    'elk.layered.thoroughness': '20',
-    // Consider node labels in layout
-    'elk.nodeLabels.placement': 'INSIDE V_CENTER H_CENTER',
-    // Wrapping for better aspect ratio
-    'elk.layered.wrapping.strategy': 'MULTI_EDGE',
-    'elk.layered.wrapping.additionalEdgeSpacing': '30',
+    'elk.layered.thoroughness': '10',
   };
 }
 
@@ -327,11 +319,15 @@ async function layoutGraph(
       sourceHandle,
       targetHandle,
       type: 'smoothstep',
-      animated: false, // Cleaner static appearance
+      animated: false,
+      pathOptions: {
+        borderRadius: 20,
+        offset: 15,
+      },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 12,
-        height: 12,
+        width: 10,
+        height: 10,
         color: strokeColor,
       },
       style: {
