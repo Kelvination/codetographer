@@ -3,7 +3,7 @@
   "displayName": "Codetographer",
   "description": "Interactive code flow visualization with navigable graphs",
   "version": "0.1.0",
-  "publisher": "codetographer",
+  "publisher": "your-publisher-id",
   "engines": {
     "vscode": "^1.85.0"
   },

@@ -4,3 +4,6 @@ extension/media/
 *.vsix
 .DS_Store
 test-screenshots/
+test-output/app/
+test-output/*.html
+assets/
