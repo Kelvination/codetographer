@@ -304,13 +304,13 @@ async function layoutGraph(
 
     // Color: custom color takes precedence, otherwise based on edge type
     const defaultEdgeColors: Record<string, string> = {
-      calls: '#4fc1ff',
-      imports: '#8b8b8b',
-      extends: '#4ec9b0',
-      implements: '#c586c0',
-      uses: '#8b8b8b',
+      calls: '#61afef',
+      imports: '#abb2bf',
+      extends: '#98c379',
+      implements: '#c678dd',
+      uses: '#abb2bf',
     };
-    const strokeColor = edge.color || defaultEdgeColors[edge.type] || '#8b8b8b';
+    const strokeColor = edge.color || defaultEdgeColors[edge.type] || '#abb2bf';
 
     return {
       id: edge.id,

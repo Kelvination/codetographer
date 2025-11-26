@@ -3,11 +3,11 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CGraphNode, CGraphLocation } from '../types/cgraph';
 
 const typeConfig: Record<CGraphNode['type'], { icon: string; color: string }> = {
-  function: { icon: 'f', color: '#4fc1ff' },
-  method: { icon: 'm', color: '#dcdcaa' },
-  class: { icon: 'C', color: '#4ec9b0' },
-  module: { icon: 'M', color: '#c586c0' },
-  file: { icon: 'F', color: '#ce9178' },
+  function: { icon: 'f', color: '#61afef' },  // Blue - functions
+  method: { icon: 'm', color: '#e5c07b' },    // Yellow - methods
+  class: { icon: 'C', color: '#98c379' },     // Green - classes
+  module: { icon: 'M', color: '#c678dd' },    // Purple - modules
+  file: { icon: 'F', color: '#e06c75' },      // Red - files
 };
 
 interface CodeNodeData {
