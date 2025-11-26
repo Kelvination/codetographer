@@ -68,18 +68,6 @@
       "group": "webview"
     },
     {
-      "id": "graph-canvas",
-      "label": "GraphCanvas",
-      "type": "module",
-      "description": "Renders the interactive graph using React Flow. Uses ELK for automatic hierarchical layout. Handles node click events for highlighting and navigation.",
-      "location": {
-        "file": "webview/src/components/GraphCanvas.tsx",
-        "startLine": 1,
-        "endLine": 210
-      },
-      "group": "webview"
-    },
-    {
       "id": "code-node",
       "label": "CodeNode",
       "type": "module",
@@ -88,6 +76,18 @@
         "file": "webview/src/components/CodeNode.tsx",
         "startLine": 1,
         "endLine": 82
+      },
+      "group": "webview"
+    },
+    {
+      "id": "graph-canvas",
+      "label": "GraphCanvas",
+      "type": "module",
+      "description": "Renders the interactive graph using React Flow. Uses ELK for automatic hierarchical layout. Handles node click events for highlighting and navigation.",
+      "location": {
+        "file": "webview/src/components/GraphCanvas.tsx",
+        "startLine": 1,
+        "endLine": 210
       },
       "group": "webview"
     }
@@ -125,6 +125,7 @@
     }
   ],
   "layout": {
+    "type": "force",
     "direction": "TB"
   }
 }

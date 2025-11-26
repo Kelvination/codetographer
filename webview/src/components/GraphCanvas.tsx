@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -6,9 +6,14 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   type Node,
   type Edge,
   type NodeMouseHandler,
+  type EdgeMouseHandler,
+  type NodeChange,
+  type NodeTypes,
   MarkerType,
 } from '@xyflow/react';
 import ELK, { type ElkNode, type ElkExtendedEdge } from 'elkjs/lib/elk.bundled.js';
@@ -20,14 +25,20 @@ import '@xyflow/react/dist/style.css';
 
 const elk = new ELK();
 
-const nodeTypes = {
-  codeNode: CodeNode,
-  groupNode: GroupNode,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const nodeTypes: NodeTypes = {
+  codeNode: CodeNode as any,
+  groupNode: GroupNode as any,
 };
 
 interface Props {
   graph: CGraph;
   onNavigate: (location: CGraphLocation) => void;
+  onNodePositionChange: (nodeId: string, position: { x: number; y: number }) => void;
+  onGroupPositionChange: (groupId: string, position: { x: number; y: number }) => void;
+  onGroupSizeChange: (groupId: string, size: { width: number; height: number }) => void;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 // Default group colors - matching One Dark theme
@@ -195,25 +206,33 @@ async function layoutGraph(
           const groupDef = graph.groups?.find((g) => g.id === groupId);
           const groupIndex = graph.groups?.findIndex((g) => g.id === groupId) || 0;
 
+          // Use saved position/size if available, otherwise use ELK calculated
+          // Round to integers to avoid floating point precision issues
+          const finalX = Math.round(groupDef?.position?.x ?? x);
+          const finalY = Math.round(groupDef?.position?.y ?? y);
+          const finalWidth = Math.round(groupDef?.size?.width ?? child.width ?? 200);
+          const finalHeight = Math.round(groupDef?.size?.height ?? child.height ?? 100);
+
           nodes.push({
             id: child.id,
             type: 'groupNode',
-            position: { x, y },
+            position: { x: finalX, y: finalY },
             data: {
               label: groupDef?.label || groupId,
               description: groupDef?.description,
               color: groupDef?.color || GROUP_COLORS[groupIndex % GROUP_COLORS.length],
-              width: child.width || 200,
-              height: child.height || 100,
+              width: finalWidth,
+              height: finalHeight,
+              groupId: groupId, // Pass original group ID for updates
             },
             style: {
-              width: child.width,
-              height: child.height,
+              width: finalWidth,
+              height: finalHeight,
             },
             zIndex: -1,
           });
 
-          // Recurse with offset
+          // Recurse with offset (use ELK positions for children calculation)
           extractPositions(child, x, y);
         } else {
           // Regular node
@@ -225,13 +244,18 @@ async function layoutGraph(
 
   extractPositions(layoutedGraph);
 
-  // Add code nodes
+  // Add code nodes - use saved position if available, otherwise use ELK calculated
   graph.nodes.forEach((node) => {
-    const pos = nodePositions.get(node.id) || { x: 0, y: 0 };
+    const elkPos = nodePositions.get(node.id) || { x: 0, y: 0 };
+    const savedPos = node.position;
+    // Round to integers to avoid floating point precision issues
+    const finalPos = savedPos
+      ? { x: Math.round(savedPos.x), y: Math.round(savedPos.y) }
+      : { x: Math.round(elkPos.x), y: Math.round(elkPos.y) };
     nodes.push({
       id: node.id,
       type: 'codeNode',
-      position: pos,
+      position: finalPos,
       data: {
         label: node.label,
         type: node.type,
@@ -341,55 +365,225 @@ async function layoutGraph(
   return { nodes, edges };
 }
 
-export function GraphCanvas({ graph, onNavigate }: Props) {
+// Custom MiniMap that supports click-to-pan
+function ClickableMiniMap({ 
+  nodeColor, 
+  nodes 
+}: { 
+  nodeColor: (node: Node) => string;
+  nodes: Node[];
+}) {
+  const { setCenter, getZoom } = useReactFlow();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      // Find the actual minimap SVG element
+      const minimapSvg = container.querySelector('.react-flow__minimap');
+      if (!minimapSvg) return;
+
+      const rect = minimapSvg.getBoundingClientRect();
+      
+      // Check if click is inside the minimap
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        return;
+      }
+      
+      // Calculate click position relative to minimap (0-1)
+      const relativeX = (event.clientX - rect.left) / rect.width;
+      const relativeY = (event.clientY - rect.top) / rect.height;
+
+      // Get the bounds of all nodes to calculate the graph extent
+      if (nodes.length === 0) return;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nodes.forEach(node => {
+        const width = (node.style?.width as number) || (node.width as number) || 200;
+        const height = (node.style?.height as number) || (node.height as number) || 100;
+        minX = Math.min(minX, node.position.x);
+        minY = Math.min(minY, node.position.y);
+        maxX = Math.max(maxX, node.position.x + width);
+        maxY = Math.max(maxY, node.position.y + height);
+      });
+
+      // Add some padding to match what the minimap shows
+      const padding = 100;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
+
+      // Calculate the target position in flow coordinates
+      const graphWidth = maxX - minX;
+      const graphHeight = maxY - minY;
+      const targetX = minX + relativeX * graphWidth;
+      const targetY = minY + relativeY * graphHeight;
+
+      // Pan to that location instantly
+      setCenter(targetX, targetY, { zoom: getZoom(), duration: 0 });
+    };
+
+    // Use capture phase to handle event before MiniMap
+    container.addEventListener('mousedown', handleMouseDown, true);
+    
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown, true);
+    };
+  }, [nodes, setCenter, getZoom]);
+
+  return (
+    <div ref={containerRef}>
+      <MiniMap
+        nodeColor={nodeColor}
+        maskColor="rgba(0, 0, 0, 0.2)"
+        pannable
+        zoomable
+      />
+    </div>
+  );
+}
+
+export function GraphCanvas({
+  graph,
+  onNavigate,
+  onNodePositionChange,
+  onGroupPositionChange,
+  onGroupSizeChange,
+  onUndo,
+  onRedo,
+}: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedLegendColor, setSelectedLegendColor] = useState<string | null>(null);
+  // Track when initial layout is complete to avoid sending updates during setup
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  // Lock state - locked by default (no dragging)
+  const [isLocked, setIsLocked] = useState(true);
 
   useEffect(() => {
+    setIsLayoutReady(false);
     layoutGraph(graph).then(({ nodes, edges }) => {
       setNodes(nodes);
       setEdges(edges);
+      // Wait for React Flow to finish measuring before enabling updates
+      setTimeout(() => setIsLayoutReady(true), 500);
     });
   }, [graph, setNodes, setEdges]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Z (Mac) or Ctrl+Z (Windows) for undo
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        onUndo();
+      }
+      // Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Windows) for redo
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        onRedo();
+      }
+      // Also support Cmd+Y / Ctrl+Y for redo (Windows convention)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault();
+        onRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onUndo, onRedo]);
 
   // Get connected node IDs and edge IDs for highlighting
   // Use graph.edges from props since it's stable and typed correctly
   const { connectedNodeIds, connectedEdgeIds } = useMemo(() => {
-    if (!selectedNodeId) {
-      return { connectedNodeIds: new Set<string>(), connectedEdgeIds: new Set<string>() };
+    // No selection - nothing highlighted
+    if (!selectedNodeId && !selectedEdgeId && !selectedLegendColor) {
+      return { 
+        connectedNodeIds: new Set<string>(), 
+        connectedEdgeIds: new Set<string>(),
+      };
     }
 
-    const connectedNodes = new Set<string>([selectedNodeId]);
+    const connectedNodes = new Set<string>();
     const connectedEdges = new Set<string>();
 
-    graph.edges.forEach((edge) => {
-      if (edge.source === selectedNodeId || edge.target === selectedNodeId) {
-        connectedEdges.add(edge.id);
-        connectedNodes.add(edge.source);
-        connectedNodes.add(edge.target);
+    if (selectedNodeId) {
+      // Node selected - highlight node and all connected nodes/edges
+      connectedNodes.add(selectedNodeId);
+      graph.edges.forEach((edge) => {
+        if (edge.source === selectedNodeId || edge.target === selectedNodeId) {
+          connectedEdges.add(edge.id);
+          connectedNodes.add(edge.source);
+          connectedNodes.add(edge.target);
+        }
+      });
+    } else if (selectedEdgeId) {
+      // Edge selected - highlight just the two connected nodes and this edge
+      connectedEdges.add(selectedEdgeId);
+      const selectedEdge = graph.edges.find((e) => e.id === selectedEdgeId);
+      if (selectedEdge) {
+        connectedNodes.add(selectedEdge.source);
+        connectedNodes.add(selectedEdge.target);
       }
-    });
+    } else if (selectedLegendColor) {
+      // Legend color selected - highlight all edges of that color and their connected nodes
+      graph.edges.forEach((edge) => {
+        // Match by explicit color or by default edge type color
+        const defaultEdgeColors: Record<string, string> = {
+          calls: '#61afef',
+          imports: '#abb2bf',
+          extends: '#98c379',
+          implements: '#c678dd',
+          uses: '#abb2bf',
+        };
+        const edgeColor = edge.color || defaultEdgeColors[edge.type] || '#abb2bf';
+        
+        if (edgeColor === selectedLegendColor) {
+          connectedEdges.add(edge.id);
+          connectedNodes.add(edge.source);
+          connectedNodes.add(edge.target);
+        }
+      });
+    }
 
-    return { connectedNodeIds: connectedNodes, connectedEdgeIds: connectedEdges };
-  }, [selectedNodeId, graph.edges]);
+    return { 
+      connectedNodeIds: connectedNodes, 
+      connectedEdgeIds: connectedEdges,
+    };
+  }, [selectedNodeId, selectedEdgeId, selectedLegendColor, graph.edges]);
 
-  // Update node dimming when selection changes
+  // Update node and group dimming when selection changes
+  // Groups are always dimmed when there's a selection (they're just containers)
   useEffect(() => {
-    if (!selectedNodeId) {
+    const hasSelection = selectedNodeId || selectedEdgeId || selectedLegendColor;
+    if (!hasSelection) {
       setNodes((nds) =>
-        nds.map((n) => {
-          if (n.type === 'groupNode') return n;
-          return {
-            ...n,
-            data: { ...n.data, dimmed: false },
-          };
-        })
+        nds.map((n) => ({
+          ...n,
+          data: { ...n.data, dimmed: false },
+        }))
       );
     } else {
       setNodes((nds) =>
         nds.map((n) => {
-          if (n.type === 'groupNode') return n;
+          if (n.type === 'groupNode') {
+            // Always dim groups when there's a selection
+            return {
+              ...n,
+              data: { ...n.data, dimmed: true },
+            };
+          }
           return {
             ...n,
             data: {
@@ -400,11 +594,12 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
         })
       );
     }
-  }, [selectedNodeId, connectedNodeIds, setNodes]);
+  }, [selectedNodeId, selectedEdgeId, selectedLegendColor, connectedNodeIds, setNodes]);
 
   // Update edge dimming when selection changes
   useEffect(() => {
-    if (!selectedNodeId) {
+    const hasSelection = selectedNodeId || selectedEdgeId || selectedLegendColor;
+    if (!hasSelection) {
       setEdges((eds) =>
         eds.map((e) => ({
           ...e,
@@ -425,7 +620,7 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
         }))
       );
     }
-  }, [selectedNodeId, connectedEdgeIds, setEdges]);
+  }, [selectedNodeId, selectedEdgeId, selectedLegendColor, connectedEdgeIds, setEdges]);
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
@@ -434,52 +629,160 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
 
       if (event.metaKey || event.ctrlKey) {
         // Cmd+Click: Navigate to code
-        onNavigate(node.data.location);
+        const data = node.data as { location: CGraphLocation };
+        onNavigate(data.location);
       } else {
         // Single click: Toggle selection for highlighting
+        setSelectedEdgeId(null); // Clear edge selection
+        setSelectedLegendColor(null); // Clear legend selection
         setSelectedNodeId((prev) => (prev === node.id ? null : node.id));
       }
     },
     [onNavigate]
   );
 
+  const handleEdgeClick: EdgeMouseHandler = useCallback(
+    (_event, edge) => {
+      // Single click: Toggle selection for highlighting connected nodes
+      setSelectedNodeId(null); // Clear node selection
+      setSelectedLegendColor(null); // Clear legend selection
+      setSelectedEdgeId((prev) => (prev === edge.id ? null : edge.id));
+    },
+    []
+  );
+
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+    setSelectedLegendColor(null);
   }, []);
+
+  const handleLegendColorSelect = useCallback((color: string | null) => {
+    setSelectedNodeId(null); // Clear node selection
+    setSelectedEdgeId(null); // Clear edge selection
+    setSelectedLegendColor(color);
+  }, []);
+
+  // Round position to avoid floating point precision issues
+  const roundPosition = (pos: { x: number; y: number }) => ({
+    x: Math.round(pos.x),
+    y: Math.round(pos.y),
+  });
+
+  // Handle node drag end - save the new position
+  const handleNodeDragStop: NodeMouseHandler = useCallback(
+    (_event, node) => {
+      // Only save positions after initial layout is complete
+      if (!isLayoutReady) return;
+
+      const roundedPos = roundPosition(node.position);
+
+      if (node.type === 'groupNode') {
+        // Extract original group ID from node ID (remove 'group-' prefix)
+        const data = node.data as { groupId?: string };
+        const groupId = data.groupId || node.id.replace('group-', '');
+        onGroupPositionChange(groupId, roundedPos);
+      } else {
+        onNodePositionChange(node.id, roundedPos);
+      }
+    },
+    [onNodePositionChange, onGroupPositionChange, isLayoutReady]
+  );
+
+  // Custom handler that also detects dimension changes (from resize)
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      // Call the default handler first
+      onNodesChange(changes);
+
+      // Only process resize changes after initial layout is complete
+      if (!isLayoutReady) return;
+
+      // Check for dimension changes (from resize) - only when resizing property is true
+      changes.forEach((change) => {
+        if (
+          change.type === 'dimensions' &&
+          'dimensions' in change &&
+          change.dimensions &&
+          'resizing' in change &&
+          change.resizing === false // resizing just finished
+        ) {
+          // Get the updated node with the current position (after resize)
+          // We need to use the state updater to access the latest state
+          setNodes((currentNodes) => {
+            const node = currentNodes.find((n) => n.id === change.id);
+            if (node?.type === 'groupNode') {
+              const data = node.data as { groupId?: string };
+              const groupId = data.groupId || change.id.replace('group-', '');
+              
+              // When resizing from top/left edges, the position changes too
+              // Send both position and size updates
+              onGroupPositionChange(groupId, {
+                x: Math.round(node.position.x),
+                y: Math.round(node.position.y),
+              });
+              onGroupSizeChange(groupId, {
+                width: Math.round(change.dimensions!.width),
+                height: Math.round(change.dimensions!.height),
+              });
+            }
+            return currentNodes; // Return unchanged state
+          });
+        }
+      });
+    },
+    [onNodesChange, onGroupPositionChange, onGroupSizeChange, isLayoutReady, setNodes]
+  );
 
   return (
     <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+      <button
+        onClick={() => setIsLocked(!isLocked)}
+        className={`lock-toggle-btn ${isLocked ? 'locked' : 'unlocked'}`}
+        title={isLocked ? 'Unlock to enable dragging' : 'Lock to prevent dragging'}
+      >
+        {isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+      </button>
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
+        onNodeDragStop={handleNodeDragStop}
         onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
-        nodesDraggable={false}
+        nodesDraggable={!isLocked}
         nodesConnectable={false}
         elementsSelectable={true}
       >
         <Background />
         <Controls />
-        <MiniMap
+        <ClickableMiniMap
           nodeColor={(node) => {
+            const data = node.data as { color?: string; dimmed?: boolean };
             if (node.type === 'groupNode') {
-              return node.data.color || 'rgba(100, 100, 100, 0.3)';
+              return data.color || 'rgba(100, 100, 100, 0.3)';
             }
-            return node.data.dimmed
+            return data.dimmed
               ? 'var(--vscode-editorWidget-background)'
               : 'var(--vscode-button-background)';
           }}
-          maskColor="rgba(0, 0, 0, 0.2)"
+          nodes={nodes}
         />
       </ReactFlow>
-      {graph.legend && <Legend legend={graph.legend} />}
+      {graph.legend && (
+        <Legend
+          legend={graph.legend}
+          selectedColor={selectedLegendColor}
+          onSelectColor={handleLegendColorSelect}
+        />
+      )}
     </div>
   );
 }

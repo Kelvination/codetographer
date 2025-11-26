@@ -23,6 +23,18 @@
       "outFiles": [
         "${workspaceFolder}/extension/dist/**/*.js"
       ]
+    },
+    {
+      "name": "Run Extension (Same Window)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}",
+        "--extensionDevelopmentPath=${workspaceFolder}/extension"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/extension/dist/**/*.js"
+      ]
     }
   ]
 }

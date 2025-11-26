@@ -34,7 +34,23 @@ body {
 .header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--vscode-panel-border);
-  background: linear-gradient(180deg, #2d2d2d 0%, var(--vscode-editorWidget-background) 100%);
+  background: linear-gradient(
+    180deg,
+    #2d2d2d 0%,
+    var(--vscode-editorWidget-background) 100%
+  );
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.header-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .header h1 {
@@ -55,6 +71,65 @@ body {
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
   opacity: 0.7;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-btn {
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--vscode-font-family);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.header-btn:hover {
+  color: var(--vscode-editor-foreground);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.header-btn:active {
+  transform: scale(0.98);
+}
+
+/* Lock toggle button */
+.lock-toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  padding: 6px 12px;
+  background: rgba(37, 37, 38, 0.95);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.lock-toggle-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--vscode-editor-foreground);
+}
+
+.lock-toggle-btn.unlocked {
+  background: rgba(14, 99, 156, 0.3);
+  border-color: var(--vscode-button-background);
 }
 
 .loading-container,
@@ -98,6 +173,7 @@ body {
   border: 1px solid var(--vscode-panel-border);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 .react-flow__controls {
@@ -147,7 +223,11 @@ body {
 .code-node {
   padding: 12px 16px;
   border-radius: 10px;
-  background: linear-gradient(180deg, #2a2a2a 0%, var(--vscode-editorWidget-background) 100%);
+  background: linear-gradient(
+    180deg,
+    #2a2a2a 0%,
+    var(--vscode-editorWidget-background) 100%
+  );
   border: 1px solid var(--vscode-panel-border);
   font-family: var(--vscode-font-family);
   font-size: 13px;
@@ -311,8 +391,25 @@ body {
 .group-node {
   border-radius: 16px;
   border: 2px solid;
-  pointer-events: none;
+  pointer-events: all;
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.group-node.dimmed {
+  opacity: 0.25;
+  filter: grayscale(0.5);
+}
+
+
+/* NodeResizer styles */
+.react-flow__resize-control {
+  background: var(--vscode-button-background) !important;
+  border-radius: 2px;
+}
+
+.react-flow__resize-control.line {
+  border-color: var(--vscode-focusBorder) !important;
 }
 
 .group-label {
@@ -330,18 +427,31 @@ body {
 /* Legend styles - Floating panel */
 .graph-legend {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
+  bottom: 16px;
+  left: 60px;
   background: rgba(37, 37, 38, 0.95);
   border: 1px solid var(--vscode-panel-border);
   border-radius: 10px;
-  padding: 14px 18px;
+  padding: 14px 18px 0 18px;
   font-family: var(--vscode-font-family);
   font-size: 12px;
   z-index: 10;
   max-width: 220px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
+  animation: legendSlideUp 0.2s ease-out;
+  transform-origin: bottom left;
+}
+
+@keyframes legendSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .legend-title {
@@ -379,4 +489,69 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.legend-item.clickable {
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.legend-item.clickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.legend-item.clickable.selected {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.legend-item.clickable.selected .legend-color {
+  box-shadow: 0 0 6px currentColor;
+}
+
+.legend-hide-btn {
+  display: block;
+  width: calc(100% + 36px);
+  margin: 12px -18px 0 -18px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 10px 10px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.legend-hide-btn:hover {
+  color: var(--vscode-editor-foreground);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Toggle button when legend is collapsed */
+.legend-toggle-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 60px;
+  z-index: 10;
+  padding: 8px 14px;
+  background: rgba(37, 37, 38, 0.95);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.legend-toggle-btn:hover {
+  color: var(--vscode-editor-foreground);
+  border-color: rgba(255, 255, 255, 0.2);
 }

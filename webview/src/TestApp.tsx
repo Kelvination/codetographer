@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GraphCanvas } from './components/GraphCanvas';
-import type { CGraph } from './types/cgraph';
+import type { CGraph, CGraphLocation } from './types/cgraph';
 import './styles.css';
 
 // Standalone test app that loads graph data from a global variable or URL param
@@ -10,8 +10,10 @@ export function TestApp() {
 
   useEffect(() => {
     // Check for graph data injected via global variable
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).__CGRAPH_DATA__) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setGraph((window as any).__CGRAPH_DATA__);
       } catch (e) {
         setError(`Failed to parse graph data: ${e}`);
@@ -33,9 +35,39 @@ export function TestApp() {
     }
   }, []);
 
-  const handleNavigate = (file: string, line: number) => {
-    console.log(`Navigate to: ${file}:${line}`);
-  };
+  const handleNavigate = useCallback((location: CGraphLocation) => {
+    console.log(`Navigate to: ${location.file}:${location.startLine}`);
+  }, []);
+
+  // No-op handlers for test app
+  const handleNodePositionChange = useCallback(
+    (nodeId: string, position: { x: number; y: number }) => {
+      console.log(`Node ${nodeId} moved to`, position);
+    },
+    []
+  );
+
+  const handleGroupPositionChange = useCallback(
+    (groupId: string, position: { x: number; y: number }) => {
+      console.log(`Group ${groupId} moved to`, position);
+    },
+    []
+  );
+
+  const handleGroupSizeChange = useCallback(
+    (groupId: string, size: { width: number; height: number }) => {
+      console.log(`Group ${groupId} resized to`, size);
+    },
+    []
+  );
+
+  const handleUndo = useCallback(() => {
+    console.log('Undo requested');
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    console.log('Redo requested');
+  }, []);
 
   if (error) {
     return (
@@ -62,7 +94,15 @@ export function TestApp() {
           <p className="description">{graph.metadata.description}</p>
         )}
       </header>
-      <GraphCanvas graph={graph} onNavigate={handleNavigate} />
+      <GraphCanvas
+        graph={graph}
+        onNavigate={handleNavigate}
+        onNodePositionChange={handleNodePositionChange}
+        onGroupPositionChange={handleGroupPositionChange}
+        onGroupSizeChange={handleGroupSizeChange}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+      />
     </div>
   );
 }

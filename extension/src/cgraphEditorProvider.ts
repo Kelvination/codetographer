@@ -3,6 +3,11 @@ import * as vscode from 'vscode';
 export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
   private static readonly viewType = 'codegrapher.cgraphEditor';
 
+  // Track URIs we're currently editing to prevent feedback loops
+  private editingUris = new Set<string>();
+  // Store the last saved state for each document
+  private lastSavedContent = new Map<string, string>();
+
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new CGraphEditorProvider(context);
     return vscode.window.registerCustomEditorProvider(
@@ -22,6 +27,11 @@ export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
+    const uriString = document.uri.toString();
+    
+    // Store the initial saved state
+    this.lastSavedContent.set(uriString, document.getText());
+
     webviewPanel.webview.options = {
       enableScripts: true,
       localResourceRoots: [
@@ -40,14 +50,32 @@ export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
 
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
-        if (e.document.uri.toString() === document.uri.toString()) {
+        const docUri = e.document.uri.toString();
+        // Skip if this is our own edit (prevents feedback loop)
+        if (docUri === uriString && !this.editingUris.has(docUri)) {
           updateWebview();
+        }
+      }
+    );
+
+    // Track document saves to update the "last saved" state
+    const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument(
+      (savedDoc) => {
+        if (savedDoc.uri.toString() === uriString) {
+          this.lastSavedContent.set(uriString, savedDoc.getText());
+          // Notify webview of save
+          webviewPanel.webview.postMessage({
+            type: 'saved',
+            content: savedDoc.getText(),
+          });
         }
       }
     );
 
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
+      saveDocumentSubscription.dispose();
+      this.lastSavedContent.delete(uriString);
     });
 
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
@@ -58,10 +86,170 @@ export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
         case 'ready':
           updateWebview();
           break;
+        case 'updatePositions':
+          await this.applyPositionChanges(document, message.changes);
+          break;
+        case 'resetLayout':
+          await this.clearManualPositions(document);
+          // Force update the webview after clearing positions
+          updateWebview();
+          break;
+        case 'revertToSaved':
+          await this.revertToSavedState(document);
+          updateWebview();
+          break;
+        case 'undo':
+          await vscode.commands.executeCommand('undo');
+          break;
+        case 'redo':
+          await vscode.commands.executeCommand('redo');
+          break;
       }
     });
 
     updateWebview();
+  }
+
+  private async applyPositionChanges(
+    document: vscode.TextDocument,
+    changes: {
+      nodePositions?: Array<{ id: string; position: { x: number; y: number } }>;
+      groupPositions?: Array<{ id: string; position: { x: number; y: number } }>;
+      groupSizes?: Array<{ id: string; size: { width: number; height: number } }>;
+    }
+  ): Promise<void> {
+    const uriString = document.uri.toString();
+    this.editingUris.add(uriString);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const content = JSON.parse(document.getText()) as any;
+
+      // Apply node position changes
+      if (changes.nodePositions) {
+        for (const change of changes.nodePositions) {
+          const node = content.nodes?.find(
+            (n: { id: string }) => n.id === change.id
+          );
+          if (node) {
+            node.position = change.position;
+          }
+        }
+      }
+
+      // Apply group position changes
+      if (changes.groupPositions && content.groups) {
+        for (const change of changes.groupPositions) {
+          const group = content.groups.find(
+            (g: { id: string }) => g.id === change.id
+          );
+          if (group) {
+            group.position = change.position;
+          }
+        }
+      }
+
+      // Apply group size changes
+      if (changes.groupSizes && content.groups) {
+        for (const change of changes.groupSizes) {
+          const group = content.groups.find(
+            (g: { id: string }) => g.id === change.id
+          );
+          if (group) {
+            group.size = change.size;
+          }
+        }
+      }
+
+      // Create a workspace edit to replace entire document
+      const edit = new vscode.WorkspaceEdit();
+      const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(document.getText().length)
+      );
+      edit.replace(document.uri, fullRange, JSON.stringify(content, null, 2));
+
+      await vscode.workspace.applyEdit(edit);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to update positions: ${error}`);
+    } finally {
+      // Use setTimeout to ensure the change event has fired before we remove from set
+      setTimeout(() => this.editingUris.delete(uriString), 100);
+    }
+  }
+
+  private async clearManualPositions(
+    document: vscode.TextDocument
+  ): Promise<void> {
+    const uriString = document.uri.toString();
+    this.editingUris.add(uriString);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const content = JSON.parse(document.getText()) as any;
+
+      // Remove position from all nodes
+      if (content.nodes) {
+        content.nodes.forEach((node: { position?: unknown }) => {
+          delete node.position;
+        });
+      }
+
+      // Remove position and size from all groups
+      if (content.groups) {
+        content.groups.forEach(
+          (group: { position?: unknown; size?: unknown }) => {
+            delete group.position;
+            delete group.size;
+          }
+        );
+      }
+
+      const edit = new vscode.WorkspaceEdit();
+      const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(document.getText().length)
+      );
+      edit.replace(document.uri, fullRange, JSON.stringify(content, null, 2));
+
+      await vscode.workspace.applyEdit(edit);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to reset layout: ${error}`);
+    } finally {
+      setTimeout(() => this.editingUris.delete(uriString), 100);
+    }
+  }
+
+  private async revertToSavedState(
+    document: vscode.TextDocument
+  ): Promise<void> {
+    const uriString = document.uri.toString();
+    const savedContent = this.lastSavedContent.get(uriString);
+    
+    if (!savedContent) {
+      vscode.window.showInformationMessage('No saved state to revert to');
+      return;
+    }
+
+    // Check if there are any changes to revert
+    if (document.getText() === savedContent) {
+      vscode.window.showInformationMessage('No changes to revert');
+      return;
+    }
+
+    this.editingUris.add(uriString);
+    try {
+      const edit = new vscode.WorkspaceEdit();
+      const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(document.getText().length)
+      );
+      edit.replace(document.uri, fullRange, savedContent);
+
+      await vscode.workspace.applyEdit(edit);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to revert: ${error}`);
+    } finally {
+      setTimeout(() => this.editingUris.delete(uriString), 100);
+    }
   }
 
   private async navigateToLocation(location: {

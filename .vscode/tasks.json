@@ -17,6 +17,17 @@
       "isBackground": true,
       "problemMatcher": [],
       "label": "npm: watch"
+    },
+    {
+      "label": "Dev Server (Hot Reload)",
+      "type": "shell",
+      "command": "cd webview && npm run dev:test",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
     }
   ]
 }

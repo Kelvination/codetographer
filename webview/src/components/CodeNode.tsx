@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import type { CGraphNode, CGraphLocation } from '../types/cgraph';
 
 const typeConfig: Record<CGraphNode['type'], { icon: string; color: string }> = {
@@ -10,12 +10,17 @@ const typeConfig: Record<CGraphNode['type'], { icon: string; color: string }> = 
   file: { icon: 'F', color: '#e06c75' },      // Red - files
 };
 
-interface CodeNodeData {
+export interface CodeNodeData {
   label: string;
   type: CGraphNode['type'];
   location: CGraphLocation;
   description?: string;
   dimmed?: boolean;
+}
+
+interface CodeNodeProps {
+  data: CodeNodeData;
+  selected?: boolean;
 }
 
 // Get a brief summary from description (first sentence or ~60 chars)
@@ -32,7 +37,7 @@ function getSummary(description: string): string {
   return (lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated) + '...';
 }
 
-function CodeNodeComponent({ data, selected }: NodeProps<CodeNodeData>) {
+function CodeNodeComponent({ data, selected }: CodeNodeProps) {
   const [expanded, setExpanded] = useState(false);
   const config = typeConfig[data.type] || typeConfig.function;
 

@@ -11,6 +11,7 @@ export interface CGraphNode {
   description?: string;
   location: CGraphLocation;
   group?: string; // Optional group ID for sectioning
+  position?: { x: number; y: number }; // Manual position override
 }
 
 export interface CGraphEdge {
@@ -28,6 +29,8 @@ export interface CGraphGroup {
   label: string;
   description?: string;
   color?: string; // Optional custom color
+  position?: { x: number; y: number }; // Manual position override
+  size?: { width: number; height: number }; // Manual size override
 }
 
 export interface CGraphLayout {

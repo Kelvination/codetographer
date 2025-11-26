@@ -1,0 +1,31 @@
+# Dependencies and build artifacts
+node_modules/
+src/
+*.ts
+!*.d.ts
+tsconfig.json
+.gitignore
+
+# Parent directory files (don't include monorepo root)
+../**
+
+# Test files
+**/*.test.ts
+**/test-output/
+**/test-screenshots/
+
+# Dev files
+.vscode/
+.git/
+.claude/
+*.vsix
+
+# Scripts
+scripts/
+
+# Webview source (we only need the built media/)
+webview/
+
+# Other
+*.md
+!README.md
