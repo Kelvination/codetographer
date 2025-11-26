@@ -88,6 +88,11 @@ body {
   background: var(--vscode-editor-background);
 }
 
+/* Background dots pattern */
+.react-flow__background pattern circle {
+  fill: rgba(255, 255, 255, 0.03);
+}
+
 .react-flow__minimap {
   background: rgba(37, 37, 38, 0.95);
   border: 1px solid var(--vscode-panel-border);

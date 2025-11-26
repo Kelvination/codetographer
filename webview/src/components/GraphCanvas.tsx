@@ -30,13 +30,13 @@ interface Props {
   onNavigate: (location: CGraphLocation) => void;
 }
 
-// Default group colors
+// Default group colors - matching One Dark theme
 const GROUP_COLORS = [
-  'rgba(79, 193, 255, 0.12)',   // blue
-  'rgba(78, 201, 176, 0.12)',   // teal
-  'rgba(197, 134, 192, 0.12)',  // purple
-  'rgba(206, 145, 120, 0.12)',  // orange
-  'rgba(220, 220, 170, 0.12)',  // yellow
+  'rgba(97, 175, 239, 0.15)',   // blue
+  'rgba(152, 195, 121, 0.15)',  // green
+  'rgba(198, 120, 221, 0.15)',  // purple
+  'rgba(224, 108, 117, 0.15)',  // red
+  'rgba(229, 192, 123, 0.15)',  // yellow
 ];
 
 // Calculate node dimensions based on content
