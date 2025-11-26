@@ -1,5 +1,5 @@
 ---
-name: codegrapher
+name: codetographer
 description: |
   Generates interactive code flow diagrams (.cgraph files).
   Invoke when users ask: "how does X work", "show me the flow of Y",
@@ -9,12 +9,12 @@ description: |
 version: "1.0.0"
 ---
 
-# CodeGrapher Skill
+# Codetographer Skill
 
 ## Purpose
 
 Generate `.cgraph` files that visualize code architecture and flow.
-These files can be viewed in VS Code with the CodeGrapher extension.
+These files can be viewed in VS Code with the Codetographer extension.
 
 ## When to Activate
 
@@ -459,7 +459,7 @@ For a request like "Show me how user authentication works":
 Tell the user:
 
 1. The file was created at `{filename}.cgraph`
-2. Open it in VS Code (requires CodeGrapher extension)
+2. Open it in VS Code (requires Codetographer extension)
 3. Click a node to highlight its connections
 4. Click the `+` button on a node to expand its description
 5. Cmd+Click (or Ctrl+Click) a node to jump to that code location

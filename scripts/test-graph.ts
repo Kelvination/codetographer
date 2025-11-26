@@ -1,7 +1,7 @@
 #!/usr/bin/env npx ts-node
 
 /**
- * Test script for CodeGrapher
+ * Test script for Codetographer
  *
  * Usage: npx ts-node scripts/test-graph.ts [test-name]
  *

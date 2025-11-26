@@ -6,7 +6,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Command to open .cgraph file as raw JSON text
   context.subscriptions.push(
-    vscode.commands.registerCommand('codegrapher.openAsText', async () => {
+    vscode.commands.registerCommand('codetographer.openAsText', async () => {
       const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
 
       // Get the URI from the active custom editor tab

@@ -1,4 +1,4 @@
-# CodeGrapher
+# Codetographer
 
 Interactive code flow visualization for VS Code. Similar to Windsurf Codemaps.
 
@@ -40,7 +40,7 @@ npm run watch
 
 ### Using the Claude Code Skill
 
-Copy `skill/SKILL.md` to your project's `.claude/skills/codegrapher/` directory.
+Copy `skill/SKILL.md` to your project's `.claude/skills/codetographer/` directory.
 
 Then ask Claude Code things like:
 
@@ -115,7 +115,7 @@ Then ask Claude Code things like:
 ### Project Structure
 
 ```
-codegrapher/
+codetographer/
 ├── extension/          # VS Code extension
 │   ├── src/
 │   │   ├── extension.ts

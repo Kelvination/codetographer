@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
-  private static readonly viewType = 'codegrapher.cgraphEditor';
+  private static readonly viewType = 'codetographer.cgraphEditor';
 
   // Track URIs we're currently editing to prevent feedback loops
   private editingUris = new Set<string>();
@@ -333,7 +333,7 @@ export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} data:;">
   <link href="${styleUri}" rel="stylesheet">
-  <title>CodeGrapher</title>
+  <title>Codetographer</title>
 </head>
 <body>
   <div id="root"></div>

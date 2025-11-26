@@ -1,9 +1,9 @@
 {
-  "name": "codegrapher",
-  "displayName": "CodeGrapher",
+  "name": "codetographer",
+  "displayName": "Codetographer",
   "description": "Interactive code flow visualization with navigable graphs",
   "version": "0.1.0",
-  "publisher": "codegrapher",
+  "publisher": "codetographer",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -16,30 +16,30 @@
   "contributes": {
     "commands": [
       {
-        "command": "codegrapher.openAsText",
+        "command": "codetographer.openAsText",
         "title": "Open as JSON",
-        "category": "CodeGrapher"
+        "category": "Codetographer"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "codegrapher.openAsText",
-          "when": "activeCustomEditorId == codegrapher.cgraphEditor"
+          "command": "codetographer.openAsText",
+          "when": "activeCustomEditorId == codetographer.cgraphEditor"
         }
       ],
       "editor/title": [
         {
-          "command": "codegrapher.openAsText",
-          "when": "activeCustomEditorId == codegrapher.cgraphEditor",
+          "command": "codetographer.openAsText",
+          "when": "activeCustomEditorId == codetographer.cgraphEditor",
           "group": "navigation"
         }
       ]
     },
     "customEditors": [
       {
-        "viewType": "codegrapher.cgraphEditor",
-        "displayName": "CodeGrapher",
+        "viewType": "codetographer.cgraphEditor",
+        "displayName": "Codetographer",
         "selector": [
           {
             "filenamePattern": "*.cgraph"
@@ -51,7 +51,7 @@
     "languages": [
       {
         "id": "cgraph",
-        "aliases": ["CodeGraph", "cgraph"],
+        "aliases": ["Codetograph", "cgraph"],
         "extensions": [".cgraph"],
         "configuration": "./language-configuration.json"
       }

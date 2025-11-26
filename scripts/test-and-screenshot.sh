@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Test and screenshot script for CodeGrapher
+# Test and screenshot script for Codetographer
 # Usage: ./scripts/test-and-screenshot.sh [test-name]
 
 set -e

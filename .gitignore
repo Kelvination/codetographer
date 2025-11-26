@@ -3,3 +3,4 @@ dist/
 extension/media/
 *.vsix
 .DS_Store
+test-screenshots/

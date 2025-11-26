@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "metadata": {
-    "title": "CodeGrapher Extension Architecture",
+    "title": "Codetographer Extension Architecture",
     "description": "How the VS Code extension loads and displays .cgraph files",
     "generated": "2025-11-25T00:00:00Z",
     "scope": "extension/src"
