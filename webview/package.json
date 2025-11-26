@@ -6,7 +6,9 @@
   "scripts": {
     "build": "vite build",
     "watch": "vite build --watch",
-    "dev": "vite"
+    "dev": "vite",
+    "build:test": "vite build --config vite.test.config.ts",
+    "dev:test": "vite --config vite.test.config.ts"
   },
   "dependencies": {
     "@xyflow/react": "^12.3.0",

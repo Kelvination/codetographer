@@ -151,7 +151,143 @@ Create `{feature-name}.cgraph` in project root with properly formatted JSON.
 - `implements`: Interface implementation
 - `uses`: General dependency or data flow
 
-## Layout Directions
+Each edge type is color-coded in the visualization:
+- `calls` → Blue (shows active invocations)
+- `extends` → Green (inheritance)
+- `implements` → Purple (interface implementation)
+- `imports`/`uses` → Gray (dependencies)
+
+## Edge Importance
+
+Use the optional `importance` field to control visual weight of edges:
+
+- `primary`: Thick line, full opacity - for the main/critical flow path
+- `secondary` (default): Normal line - for standard relationships
+- `tertiary`: Thin line, reduced opacity - for minor/optional connections
+
+### Example
+
+```json
+{
+  "id": "e1",
+  "source": "login-route",
+  "target": "auth-service",
+  "type": "calls",
+  "importance": "primary"
+}
+```
+
+### When to Use Importance
+
+- Mark the **critical path** as `primary` (e.g., the main success flow)
+- Leave most edges as `secondary` (default)
+- Use `tertiary` for error handlers, logging, or optional dependencies
+
+This helps readers instantly see which paths matter most.
+
+## Custom Edge Colors
+
+You can override the default edge type colors with custom colors:
+
+```json
+{
+  "id": "e1",
+  "source": "api-handler",
+  "target": "database",
+  "type": "calls",
+  "color": "#ff6b6b"
+}
+```
+
+Use custom colors when:
+- You want to show different categories beyond the standard edge types
+- You're using a legend to explain custom color meanings
+- You want to highlight specific paths with distinct colors
+
+## Legend
+
+Add a legend to explain custom colors or categories in your graph:
+
+```json
+"legend": {
+  "title": "Data Flow",
+  "items": [
+    { "color": "#ff6b6b", "label": "Write operations" },
+    { "color": "#4ecdc4", "label": "Read operations" },
+    { "color": "#ffe66d", "label": "Cache access" }
+  ]
+}
+```
+
+The legend appears in the bottom-left corner of the graph. Use it when:
+- You have custom edge colors that need explanation
+- You want to categorize edges beyond the standard types
+- The graph has semantic meaning tied to colors
+
+### Example with Legend
+
+```json
+{
+  "version": "1.0",
+  "metadata": { "title": "Database Operations" },
+  "nodes": [...],
+  "edges": [
+    { "id": "e1", "source": "api", "target": "db", "type": "calls", "color": "#ff6b6b" },
+    { "id": "e2", "source": "cache", "target": "api", "type": "calls", "color": "#4ecdc4" }
+  ],
+  "legend": {
+    "title": "Operation Types",
+    "items": [
+      { "color": "#ff6b6b", "label": "Database write" },
+      { "color": "#4ecdc4", "label": "Cache read" }
+    ]
+  }
+}
+```
+
+## Layout Types
+
+The `layout.type` field controls the overall layout algorithm:
+
+- `layered` (default): Hierarchical tree layout, good for call flows and linear processes
+- `force`: Compact web-like layout using physics simulation, good for interconnected systems
+- `stress`: Balanced even-spacing layout, good for general relationship graphs
+
+### When to Use Each Type
+
+**Use `layered` (default) when:**
+- Showing a clear flow from entry point to exit
+- Visualizing call hierarchies
+- The graph has a natural top-to-bottom or left-to-right direction
+
+**Use `force` when:**
+- The graph has many cross-connections (not strictly hierarchical)
+- You want a compact view that fits on one screen
+- Visualizing interconnected systems or dependency webs
+
+**Use `stress` when:**
+- You want evenly-spaced nodes regardless of hierarchy
+- The relationships are bidirectional or cyclical
+- Displaying general architecture without implied flow
+
+### Example
+
+```json
+"layout": {
+  "type": "force"
+}
+```
+
+Or with direction (only applies to `layered`):
+
+```json
+"layout": {
+  "type": "layered",
+  "direction": "LR"
+}
+```
+
+## Layout Directions (for layered type)
 
 - `TB`: Top to bottom (default - use this for most flows)
 - `LR`: Left to right (use for linear pipelines)

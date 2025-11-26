@@ -14,6 +14,7 @@ import {
 import ELK, { type ElkNode, type ElkExtendedEdge } from 'elkjs/lib/elk.bundled.js';
 import { CodeNode } from './CodeNode';
 import { GroupNode } from './GroupNode';
+import { Legend } from './Legend';
 import type { CGraph, CGraphLocation, CGraphGroup } from '../types/cgraph';
 import '@xyflow/react/dist/style.css';
 
@@ -51,14 +52,72 @@ function getNodeDimensions(label: string, description?: string): { width: number
   return { width: baseWidth, height: baseHeight };
 }
 
+// Get layout options based on layout type
+function getLayoutOptions(
+  layoutType: 'layered' | 'force' | 'stress',
+  direction: string
+): Record<string, string> {
+  if (layoutType === 'force') {
+    // Force-directed layout - compact, web-like
+    // Uses layered algorithm with loose settings for more organic feel
+    return {
+      'elk.algorithm': 'layered',
+      'elk.direction': direction,
+      'elk.layered.spacing.nodeNodeBetweenLayers': '150',
+      'elk.spacing.nodeNode': '100',
+      'elk.spacing.edgeNode': '60',
+      'elk.spacing.edgeEdge': '30',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
+      'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+      'elk.layered.wrapping.additionalEdgeSpacing': '40',
+      'elk.aspectRatio': '1.6',
+      'elk.edgeRouting': 'ORTHOGONAL',
+    };
+  } else if (layoutType === 'stress') {
+    // Stress-based layout with edge routing via separate pass
+    // Note: stress algorithm doesn't support edge routing directly,
+    // so we increase spacing to minimize overlaps
+    return {
+      'elk.algorithm': 'stress',
+      'elk.stress.desiredEdgeLength': '250',
+      'elk.stress.iterations': '400',
+      'elk.spacing.nodeNode': '150',
+      'elk.spacing.edgeNode': '80',
+    };
+  } else {
+    // Default: layered layout - hierarchical tree
+    return {
+      'elk.algorithm': 'layered',
+      'elk.direction': direction,
+      'elk.layered.spacing.nodeNodeBetweenLayers': '120',
+      'elk.spacing.nodeNode': '80',
+      'elk.spacing.edgeNode': '50',
+      'elk.spacing.edgeEdge': '25',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
+      'elk.layered.feedbackEdges': 'true',
+      'elk.layered.wrapping.strategy': 'OFF',
+      'elk.layered.thoroughness': '10',
+      'elk.layered.mergeEdges': 'false',
+      'elk.nodeLabels.placement': 'INSIDE V_CENTER H_CENTER',
+      'elk.edgeRouting': 'ORTHOGONAL',
+    };
+  }
+}
+
 async function layoutGraph(
   graph: CGraph
 ): Promise<{ nodes: Node[]; edges: Edge[] }> {
   const direction = graph.layout?.direction || 'TB';
+  const layoutType = graph.layout?.type || 'layered';
   const hasGroups = graph.groups && graph.groups.length > 0;
 
   // Build ELK graph structure
   let elkGraph: ElkNode;
+  const baseLayoutOptions = getLayoutOptions(layoutType, direction);
 
   if (hasGroups && graph.groups) {
     // Create hierarchical structure with groups as parent nodes
@@ -92,10 +151,7 @@ async function layoutGraph(
           id: `group-${group.id}`,
           layoutOptions: {
             'elk.padding': '[top=50,left=25,bottom=25,right=25]',
-            'elk.algorithm': 'layered',
-            'elk.direction': direction,
-            'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-            'elk.spacing.nodeNode': '60',
+            ...getLayoutOptions(layoutType, direction),
           },
           children: groupNodes.map((node) => {
             const dims = getNodeDimensions(node.label, node.description);
@@ -122,13 +178,9 @@ async function layoutGraph(
     elkGraph = {
       id: 'root',
       layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': direction,
-        'elk.spacing.nodeNode': '50',
-        'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+        ...baseLayoutOptions,
         'elk.spacing.componentComponent': '80',
         'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
       },
       children: elkChildren,
       edges: graph.edges.map((edge) => ({
@@ -138,34 +190,10 @@ async function layoutGraph(
       })) as ElkExtendedEdge[],
     };
   } else {
-    // Simple flat layout - proper vertical tree with good spacing
+    // Simple flat layout
     elkGraph = {
       id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': direction,
-        // Generous vertical spacing between layers for expanded nodes
-        'elk.layered.spacing.nodeNodeBetweenLayers': '120',
-        // Horizontal spacing between siblings - increased for clarity
-        'elk.spacing.nodeNode': '80',
-        // Edge spacing to prevent overlaps
-        'elk.spacing.edgeNode': '40',
-        'elk.spacing.edgeEdge': '20',
-        // Better node placement for tree-like appearance
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-        'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-        // Center nodes within their layer
-        'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
-        // Handle cycles/back-edges better - route them around nodes
-        'elk.layered.feedbackEdges': 'true',
-        'elk.layered.wrapping.strategy': 'OFF',
-        // Prefer longer edges over crossing
-        'elk.layered.thoroughness': '10',
-        // Merge edges going to same target for cleaner look
-        'elk.layered.mergeEdges': 'false',
-        // Consider node labels in layout
-        'elk.nodeLabels.placement': 'INSIDE V_CENTER H_CENTER',
-      },
+      layoutOptions: baseLayoutOptions,
       children: graph.nodes.map((node) => {
         const dims = getNodeDimensions(node.label, node.description);
         return {
@@ -248,8 +276,10 @@ async function layoutGraph(
     });
   });
 
-  // Create edges with proper pathfinding based on layout direction
+  // Create edges with handle positions based on relative node positions
+  const isStressLayout = layoutType === 'stress';
   const isVertical = direction === 'TB' || direction === 'BT';
+
   const edges: Edge[] = graph.edges.map((edge) => {
     // Get source and target positions to determine best handle positions
     const sourcePos = nodePositions.get(edge.source);
@@ -257,49 +287,85 @@ async function layoutGraph(
 
     let sourceHandle: string | undefined;
     let targetHandle: string | undefined;
-    let isBackEdge = false;
 
     if (sourcePos && targetPos) {
-      if (isVertical) {
-        // Detect back-edge: target is above source in TB layout
-        isBackEdge = targetPos.y < sourcePos.y - 30;
+      const dx = targetPos.x - sourcePos.x;
+      const dy = targetPos.y - sourcePos.y;
 
-        if (isBackEdge) {
-          // Back-edges go out the left side and curve around
-          sourceHandle = 'left';
-          targetHandle = 'left';
-        } else if (targetPos.y > sourcePos.y + 50) {
-          // Normal forward edge: bottom to top
-          sourceHandle = 'bottom';
+      if (isStressLayout) {
+        // For stress layouts, connect to nearest sides based on position
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0) {
+            sourceHandle = 'right-source';
+            targetHandle = 'left';
+          } else {
+            sourceHandle = 'left-source';
+            targetHandle = 'right';
+          }
+        } else {
+          if (dy > 0) {
+            sourceHandle = 'bottom-source';
+            targetHandle = 'top';
+          } else {
+            sourceHandle = 'top-source';
+            targetHandle = 'bottom';
+          }
+        }
+      } else if (isVertical) {
+        // For vertical layouts, prefer top/bottom but handle sideways too
+        if (dy > 30) {
+          // Target is below - standard flow
+          sourceHandle = 'bottom-source';
           targetHandle = 'top';
-        } else if (targetPos.x > sourcePos.x) {
-          // Same layer, target to the right
-          sourceHandle = 'right';
+        } else if (dy < -30) {
+          // Target is above - use side handles to curve around
+          sourceHandle = 'left-source';
+          targetHandle = 'left';
+        } else if (dx > 0) {
+          // Same level, target to the right
+          sourceHandle = 'right-source';
           targetHandle = 'left';
         } else {
-          // Same layer, target to the left
-          sourceHandle = 'left';
+          // Same level, target to the left
+          sourceHandle = 'left-source';
           targetHandle = 'right';
         }
       } else {
-        // Horizontal layout
-        isBackEdge = targetPos.x < sourcePos.x - 30;
-
-        if (isBackEdge) {
-          sourceHandle = 'top';
-          targetHandle = 'top';
-        } else if (targetPos.x > sourcePos.x + 50) {
-          sourceHandle = 'right';
+        // For horizontal layouts, prefer left/right but handle vertical too
+        if (dx > 30) {
+          // Target is to the right - standard flow
+          sourceHandle = 'right-source';
           targetHandle = 'left';
-        } else if (targetPos.y > sourcePos.y) {
-          sourceHandle = 'bottom';
+        } else if (dx < -30) {
+          // Target is to the left - use top handles to curve around
+          sourceHandle = 'top-source';
+          targetHandle = 'top';
+        } else if (dy > 0) {
+          // Same column, target below
+          sourceHandle = 'bottom-source';
           targetHandle = 'top';
         } else {
-          sourceHandle = 'top';
+          // Same column, target above
+          sourceHandle = 'top-source';
           targetHandle = 'bottom';
         }
       }
     }
+
+    // Style based on importance (primary = thick/bright, tertiary = thin/dim)
+    const importance = edge.importance || 'secondary';
+    const strokeWidth = importance === 'primary' ? 3 : importance === 'tertiary' ? 1.5 : 2;
+    const strokeOpacity = importance === 'primary' ? 1 : importance === 'tertiary' ? 0.5 : 0.8;
+
+    // Color: custom color takes precedence, otherwise based on edge type
+    const defaultEdgeColors: Record<string, string> = {
+      calls: 'var(--vscode-charts-blue)',
+      imports: 'var(--vscode-descriptionForeground)',
+      extends: 'var(--vscode-charts-green)',
+      implements: 'var(--vscode-charts-purple)',
+      uses: 'var(--vscode-descriptionForeground)',
+    };
+    const strokeColor = edge.color || defaultEdgeColors[edge.type] || 'var(--vscode-descriptionForeground)';
 
     return {
       id: edge.id,
@@ -308,21 +374,19 @@ async function layoutGraph(
       sourceHandle,
       targetHandle,
       type: 'smoothstep',
-      animated: edge.type === 'calls' && !isBackEdge,
+      animated: true, // All edges animated to show flow direction
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 14,
-        height: 14,
+        width: importance === 'primary' ? 16 : importance === 'tertiary' ? 12 : 14,
+        height: importance === 'primary' ? 16 : importance === 'tertiary' ? 12 : 14,
       },
       style: {
-        strokeWidth: isBackEdge ? 1.5 : 2,
-        stroke: isBackEdge
-          ? 'rgba(139, 139, 139, 0.5)'
-          : 'var(--vscode-descriptionForeground)',
-        strokeDasharray: isBackEdge ? '6 4' : undefined,
+        strokeWidth,
+        stroke: strokeColor,
+        opacity: strokeOpacity,
       },
-      data: { label: edge.label, edgeType: edge.type, isBackEdge },
-      zIndex: isBackEdge ? -1 : 0, // Back-edges render behind
+      data: { label: edge.label, edgeType: edge.type, importance },
+      zIndex: importance === 'primary' ? 1 : importance === 'tertiary' ? -1 : 0,
     };
   });
 
@@ -330,8 +394,8 @@ async function layoutGraph(
 }
 
 export function GraphCanvas({ graph, onNavigate }: Props) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -341,21 +405,26 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
     });
   }, [graph, setNodes, setEdges]);
 
-  // Get connected node IDs for highlighting
-  const connectedNodeIds = useMemo(() => {
-    if (!selectedNodeId) return new Set<string>();
+  // Get connected node IDs and edge IDs for highlighting
+  // Use graph.edges from props since it's stable and typed correctly
+  const { connectedNodeIds, connectedEdgeIds } = useMemo(() => {
+    if (!selectedNodeId) {
+      return { connectedNodeIds: new Set<string>(), connectedEdgeIds: new Set<string>() };
+    }
 
-    const connected = new Set<string>([selectedNodeId]);
-    edges.forEach((edge) => {
-      if (edge.source === selectedNodeId) {
-        connected.add(edge.target);
-      }
-      if (edge.target === selectedNodeId) {
-        connected.add(edge.source);
+    const connectedNodes = new Set<string>([selectedNodeId]);
+    const connectedEdges = new Set<string>();
+
+    graph.edges.forEach((edge) => {
+      if (edge.source === selectedNodeId || edge.target === selectedNodeId) {
+        connectedEdges.add(edge.id);
+        connectedNodes.add(edge.source);
+        connectedNodes.add(edge.target);
       }
     });
-    return connected;
-  }, [selectedNodeId, edges]);
+
+    return { connectedNodeIds: connectedNodes, connectedEdgeIds: connectedEdges };
+  }, [selectedNodeId, graph.edges]);
 
   // Update node dimming when selection changes
   useEffect(() => {
@@ -385,6 +454,31 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
     }
   }, [selectedNodeId, connectedNodeIds, setNodes]);
 
+  // Update edge dimming when selection changes
+  useEffect(() => {
+    if (!selectedNodeId) {
+      setEdges((eds) =>
+        eds.map((e) => ({
+          ...e,
+          style: {
+            ...e.style,
+            opacity: 1,
+          },
+        }))
+      );
+    } else {
+      setEdges((eds) =>
+        eds.map((e) => ({
+          ...e,
+          style: {
+            ...e.style,
+            opacity: connectedEdgeIds.has(e.id) ? 1 : 0.15,
+          },
+        }))
+      );
+    }
+  }, [selectedNodeId, connectedEdgeIds, setEdges]);
+
   const handleNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
       // Ignore clicks on group nodes
@@ -406,7 +500,7 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
   }, []);
 
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -437,6 +531,7 @@ export function GraphCanvas({ graph, onNavigate }: Props) {
           maskColor="rgba(0, 0, 0, 0.2)"
         />
       </ReactFlow>
+      {graph.legend && <Legend legend={graph.legend} />}
     </div>
   );
 }

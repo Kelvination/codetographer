@@ -1,0 +1,389 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "title": "E-Commerce Platform Architecture",
+    "description": "Full demo showing all CodeGrapher features: groups, node types, edge importance, custom colors, and legend",
+    "generated": "2025-11-26T18:05:00.000Z",
+    "scope": "src/"
+  },
+  "nodes": [
+    {
+      "id": "api-gateway",
+      "label": "API Gateway",
+      "type": "module",
+      "description": "Main entry point for all HTTP requests. Handles routing, rate limiting, and authentication middleware.",
+      "location": { "file": "src/api/gateway.ts", "startLine": 1 },
+      "group": "api"
+    },
+    {
+      "id": "auth-controller",
+      "label": "AuthController",
+      "type": "class",
+      "description": "Handles user authentication endpoints: login, logout, refresh tokens, and password reset.",
+      "location": { "file": "src/api/controllers/auth.ts", "startLine": 15 },
+      "group": "api"
+    },
+    {
+      "id": "products-controller",
+      "label": "ProductsController",
+      "type": "class",
+      "description": "CRUD operations for product catalog. Supports filtering, pagination, and search.",
+      "location": { "file": "src/api/controllers/products.ts", "startLine": 22 },
+      "group": "api"
+    },
+    {
+      "id": "orders-controller",
+      "label": "OrdersController",
+      "type": "class",
+      "description": "Order management: create, update status, cancel, and order history.",
+      "location": { "file": "src/api/controllers/orders.ts", "startLine": 18 },
+      "group": "api"
+    },
+    {
+      "id": "auth-service",
+      "label": "AuthService",
+      "type": "class",
+      "description": "Core authentication logic: JWT generation, validation, and user session management.",
+      "location": { "file": "src/services/auth.service.ts", "startLine": 10 },
+      "group": "services"
+    },
+    {
+      "id": "product-service",
+      "label": "ProductService",
+      "type": "class",
+      "description": "Business logic for products: inventory checks, pricing rules, and catalog management.",
+      "location": { "file": "src/services/product.service.ts", "startLine": 8 },
+      "group": "services"
+    },
+    {
+      "id": "order-service",
+      "label": "OrderService",
+      "type": "class",
+      "description": "Order processing: validation, payment integration, and fulfillment workflow.",
+      "location": { "file": "src/services/order.service.ts", "startLine": 12 },
+      "group": "services"
+    },
+    {
+      "id": "notification-service",
+      "label": "NotificationService",
+      "type": "class",
+      "description": "Sends emails, SMS, and push notifications for order updates and marketing.",
+      "location": { "file": "src/services/notification.service.ts", "startLine": 5 },
+      "group": "services"
+    },
+    {
+      "id": "user-repo",
+      "label": "UserRepository",
+      "type": "class",
+      "description": "Data access layer for user accounts and profiles.",
+      "location": { "file": "src/repositories/user.repo.ts", "startLine": 8 },
+      "group": "data"
+    },
+    {
+      "id": "product-repo",
+      "label": "ProductRepository",
+      "type": "class",
+      "description": "Data access for product catalog with caching support.",
+      "location": { "file": "src/repositories/product.repo.ts", "startLine": 10 },
+      "group": "data"
+    },
+    {
+      "id": "order-repo",
+      "label": "OrderRepository",
+      "type": "class",
+      "description": "Persists orders and order items with transaction support.",
+      "location": { "file": "src/repositories/order.repo.ts", "startLine": 12 },
+      "group": "data"
+    },
+    {
+      "id": "postgres-db",
+      "label": "PostgreSQL",
+      "type": "module",
+      "description": "Primary database for users, products, and orders.",
+      "location": { "file": "src/config/database.ts", "startLine": 1 },
+      "group": "infrastructure"
+    },
+    {
+      "id": "redis-cache",
+      "label": "Redis Cache",
+      "type": "module",
+      "description": "Caches product catalog, sessions, and rate limit counters.",
+      "location": { "file": "src/config/redis.ts", "startLine": 1 },
+      "group": "infrastructure"
+    },
+    {
+      "id": "stripe-client",
+      "label": "StripeClient",
+      "type": "class",
+      "description": "Payment processing integration with Stripe API.",
+      "location": { "file": "src/integrations/stripe.ts", "startLine": 15 },
+      "group": "infrastructure"
+    },
+    {
+      "id": "sendgrid-client",
+      "label": "SendGridClient",
+      "type": "class",
+      "description": "Email delivery via SendGrid API.",
+      "location": { "file": "src/integrations/sendgrid.ts", "startLine": 8 },
+      "group": "infrastructure"
+    },
+    {
+      "id": "base-entity",
+      "label": "BaseEntity",
+      "type": "class",
+      "description": "Abstract base class with id, createdAt, updatedAt fields.",
+      "location": { "file": "src/models/base.entity.ts", "startLine": 3 }
+    },
+    {
+      "id": "user-entity",
+      "label": "User",
+      "type": "class",
+      "description": "User account entity with email, password hash, and profile.",
+      "location": { "file": "src/models/user.entity.ts", "startLine": 5 }
+    },
+    {
+      "id": "order-entity",
+      "label": "Order",
+      "type": "class",
+      "description": "Order entity with status, items, and payment info.",
+      "location": { "file": "src/models/order.entity.ts", "startLine": 8 }
+    },
+    {
+      "id": "logger",
+      "label": "Logger",
+      "type": "function",
+      "description": "Centralized logging utility with structured JSON output.",
+      "location": { "file": "src/utils/logger.ts", "startLine": 12 }
+    },
+    {
+      "id": "validate-request",
+      "label": "validateRequest",
+      "type": "function",
+      "description": "Middleware for request validation using Zod schemas.",
+      "location": { "file": "src/middleware/validate.ts", "startLine": 8 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "api-gateway",
+      "target": "auth-controller",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4fc1ff"
+    },
+    {
+      "id": "e2",
+      "source": "api-gateway",
+      "target": "products-controller",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4fc1ff"
+    },
+    {
+      "id": "e3",
+      "source": "api-gateway",
+      "target": "orders-controller",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4fc1ff"
+    },
+    {
+      "id": "e4",
+      "source": "auth-controller",
+      "target": "auth-service",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4ecdc4"
+    },
+    {
+      "id": "e5",
+      "source": "products-controller",
+      "target": "product-service",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4ecdc4"
+    },
+    {
+      "id": "e6",
+      "source": "orders-controller",
+      "target": "order-service",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#4ecdc4"
+    },
+    {
+      "id": "e7",
+      "source": "auth-service",
+      "target": "user-repo",
+      "type": "calls",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e8",
+      "source": "product-service",
+      "target": "product-repo",
+      "type": "calls",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e9",
+      "source": "order-service",
+      "target": "order-repo",
+      "type": "calls",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e10",
+      "source": "order-service",
+      "target": "product-service",
+      "type": "calls",
+      "importance": "secondary",
+      "color": "#4ecdc4",
+      "label": "check inventory"
+    },
+    {
+      "id": "e11",
+      "source": "order-service",
+      "target": "stripe-client",
+      "type": "calls",
+      "importance": "primary",
+      "color": "#ffe66d"
+    },
+    {
+      "id": "e12",
+      "source": "order-service",
+      "target": "notification-service",
+      "type": "calls",
+      "importance": "tertiary",
+      "color": "#c586c0"
+    },
+    {
+      "id": "e13",
+      "source": "notification-service",
+      "target": "sendgrid-client",
+      "type": "calls",
+      "importance": "secondary",
+      "color": "#c586c0"
+    },
+    {
+      "id": "e14",
+      "source": "user-repo",
+      "target": "postgres-db",
+      "type": "uses",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e15",
+      "source": "product-repo",
+      "target": "postgres-db",
+      "type": "uses",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e16",
+      "source": "order-repo",
+      "target": "postgres-db",
+      "type": "uses",
+      "importance": "secondary",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "e17",
+      "source": "product-repo",
+      "target": "redis-cache",
+      "type": "uses",
+      "importance": "tertiary",
+      "color": "#95e1d3"
+    },
+    {
+      "id": "e18",
+      "source": "auth-service",
+      "target": "redis-cache",
+      "type": "uses",
+      "importance": "tertiary",
+      "color": "#95e1d3"
+    },
+    {
+      "id": "e19",
+      "source": "user-entity",
+      "target": "base-entity",
+      "type": "extends",
+      "importance": "tertiary"
+    },
+    {
+      "id": "e20",
+      "source": "order-entity",
+      "target": "base-entity",
+      "type": "extends",
+      "importance": "tertiary"
+    },
+    {
+      "id": "e21",
+      "source": "api-gateway",
+      "target": "validate-request",
+      "type": "uses",
+      "importance": "tertiary"
+    },
+    {
+      "id": "e22",
+      "source": "api-gateway",
+      "target": "logger",
+      "type": "uses",
+      "importance": "tertiary"
+    },
+    {
+      "id": "e23",
+      "source": "order-service",
+      "target": "logger",
+      "type": "uses",
+      "importance": "tertiary"
+    }
+  ],
+  "groups": [
+    {
+      "id": "api",
+      "label": "API Layer",
+      "description": "HTTP endpoints and request handling",
+      "color": "#4fc1ff"
+    },
+    {
+      "id": "services",
+      "label": "Business Logic",
+      "description": "Core application services",
+      "color": "#4ecdc4"
+    },
+    {
+      "id": "data",
+      "label": "Data Access",
+      "description": "Repositories and data persistence",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "infrastructure",
+      "label": "Infrastructure",
+      "description": "External services and databases",
+      "color": "#ffe66d"
+    }
+  ],
+  "legend": {
+    "title": "Data Flow",
+    "items": [
+      { "color": "#4fc1ff", "label": "HTTP routing" },
+      { "color": "#4ecdc4", "label": "Service calls" },
+      { "color": "#ff6b6b", "label": "Database access" },
+      { "color": "#95e1d3", "label": "Cache access" },
+      { "color": "#ffe66d", "label": "Payment processing" },
+      { "color": "#c586c0", "label": "Notifications" }
+    ]
+  },
+  "layout": {
+    "direction": "TB",
+    "type": "layered"
+  }
+}

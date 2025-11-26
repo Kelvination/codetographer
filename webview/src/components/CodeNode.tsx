@@ -56,11 +56,15 @@ function CodeNodeComponent({ data, selected }: NodeProps<CodeNodeData>) {
 
   return (
     <>
-      {/* Handles on all four sides for flexible edge connections */}
+      {/* Handles on all four sides - both source and target for flexible edge connections */}
       <Handle type="target" position={Position.Top} id="top" />
+      <Handle type="source" position={Position.Top} id="top-source" />
       <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="source" position={Position.Bottom} id="bottom" />
-      <Handle type="source" position={Position.Right} id="right" />
+      <Handle type="source" position={Position.Left} id="left-source" />
+      <Handle type="target" position={Position.Bottom} id="bottom" />
+      <Handle type="source" position={Position.Bottom} id="bottom-source" />
+      <Handle type="target" position={Position.Right} id="right" />
+      <Handle type="source" position={Position.Right} id="right-source" />
       <div className={classes}>
         <div className="node-header">
           <span

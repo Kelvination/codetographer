@@ -78,10 +78,18 @@ export class CGraphEditorProvider implements vscode.CustomTextEditorProvider {
     try {
       const fileUri = vscode.Uri.joinPath(workspaceRoot, location.file);
       const doc = await vscode.workspace.openTextDocument(fileUri);
-      const editor = await vscode.window.showTextDocument(
-        doc,
-        vscode.ViewColumn.Beside
+
+      // Open in an existing editor column if available, otherwise use column one
+      // This prevents creating new splits on every navigation
+      const existingEditor = vscode.window.visibleTextEditors.find(
+        (e) => e.document.languageId !== 'json' // Don't reuse cgraph editors
       );
+      const targetColumn = existingEditor?.viewColumn || vscode.ViewColumn.One;
+
+      const editor = await vscode.window.showTextDocument(doc, {
+        viewColumn: targetColumn,
+        preserveFocus: false,
+      });
 
       const startLine = Math.max(0, location.startLine - 1);
       const endLine = location.endLine

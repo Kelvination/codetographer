@@ -19,6 +19,8 @@ export interface CGraphEdge {
   target: string;
   type: 'calls' | 'imports' | 'extends' | 'implements' | 'uses';
   label?: string;
+  importance?: 'primary' | 'secondary' | 'tertiary'; // Visual weight of the edge
+  color?: string; // Custom color (hex or CSS color name)
 }
 
 export interface CGraphGroup {
@@ -30,6 +32,17 @@ export interface CGraphGroup {
 
 export interface CGraphLayout {
   direction?: 'TB' | 'LR' | 'BT' | 'RL';
+  type?: 'layered' | 'force' | 'stress'; // Layout algorithm type
+}
+
+export interface CGraphLegendItem {
+  color: string;
+  label: string;
+}
+
+export interface CGraphLegend {
+  title?: string;
+  items: CGraphLegendItem[];
 }
 
 export interface CGraphMetadata {
@@ -46,4 +59,5 @@ export interface CGraph {
   edges: CGraphEdge[];
   groups?: CGraphGroup[];
   layout?: CGraphLayout;
+  legend?: CGraphLegend;
 }

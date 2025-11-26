@@ -13,6 +13,7 @@
     "dev": "npm run watch"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "puppeteer": "^24.31.0"
   }
 }
