@@ -401,7 +401,6 @@ body {
   filter: grayscale(0.5);
 }
 
-
 /* NodeResizer styles */
 .react-flow__resize-control {
   background: var(--vscode-button-background) !important;

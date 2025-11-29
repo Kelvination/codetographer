@@ -7,10 +7,15 @@
     "webview"
   ],
   "scripts": {
+    "setup": "./scripts/setup.sh",
     "build": "npm run build -w webview && npm run build -w extension",
     "watch": "concurrently \"npm run watch -w webview\" \"npm run watch -w extension\"",
     "package": "npm run build && cd extension && vsce package",
-    "dev": "npm run watch"
+    "dev": "npm run watch",
+    "build:local": "./scripts/build-local.sh",
+    "build:local:code": "./scripts/build-local.sh --editor=code",
+    "build:local:cursor": "./scripts/build-local.sh --editor=cursor",
+    "build:local:no-reload": "./scripts/build-local.sh --no-reload"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

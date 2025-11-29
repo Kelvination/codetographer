@@ -8,6 +8,7 @@ import {
   useEdgesState,
   useReactFlow,
   ReactFlowProvider,
+  PanOnScrollMode,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -363,6 +364,50 @@ async function layoutGraph(
   });
 
   return { nodes, edges };
+}
+
+// Handles cmd/ctrl+scroll to zoom
+function KeyboardZoomHandler() {
+  const { zoomIn, zoomOut } = useReactFlow();
+
+  useEffect(() => {
+    const handleWheel = (event: WheelEvent) => {
+      // On Mac trackpads, pinch-to-zoom is sent as wheel events with ctrlKey=true
+      // We want to let ReactFlow's native zoomOnPinch handle those
+      // Real cmd+scroll will have metaKey=true on Mac
+      // Real ctrl+scroll will have ctrlKey=true on Windows
+
+      // Skip if this looks like a pinch gesture (ctrlKey without metaKey on Mac)
+      // Pinch gestures typically have ctrlKey set but not metaKey
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+      if (isMac) {
+        // On Mac: only respond to Cmd+scroll (metaKey), not Ctrl which is pinch
+        if (!event.metaKey) return;
+      } else {
+        // On Windows/Linux: respond to Ctrl+scroll
+        if (!event.ctrlKey) return;
+      }
+
+      event.preventDefault();
+
+      // Zoom in or out based on scroll direction
+      if (event.deltaY < 0) {
+        zoomIn({ duration: 100 });
+      } else {
+        zoomOut({ duration: 100 });
+      }
+    };
+
+    // Use passive: false to allow preventDefault
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [zoomIn, zoomOut]);
+
+  return null;
 }
 
 // Custom MiniMap that supports click-to-pan
@@ -760,7 +805,12 @@ export function GraphCanvas({
         nodesDraggable={!isLocked}
         nodesConnectable={false}
         elementsSelectable={true}
+        panOnScroll={true}
+        panOnScrollMode={PanOnScrollMode.Free}
+        zoomOnScroll={false}
+        zoomOnPinch={true}
       >
+        <KeyboardZoomHandler />
         <Background />
         <Controls />
         <ClickableMiniMap

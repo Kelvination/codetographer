@@ -15,15 +15,17 @@ Interactive code flow visualization for VS Code.
 ## Installation
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (pnpm recommended, npm/yarn also work)
+pnpm install
 
-# Build the extension
-npm run build
+# One-time setup (installs vsce CLI if needed, runs initial build)
+pnpm setup
 
-# For development (watch mode)
-npm run watch
+# Build and install locally (auto-detects VS Code or Cursor)
+pnpm build:local
 ```
+
+> **Note:** This project uses workspaces - only run `install` at the root level. The `extension/` and `webview/` dependencies are handled automatically.
 
 ## Usage
 
@@ -114,6 +116,49 @@ Then ask Claude Code things like:
 
 ## Development
 
+### Quick Start
+
+```bash
+pnpm install           # One-time
+pnpm setup             # Installs vsce, runs initial build
+pnpm build:local       # Build & install locally
+```
+
+### Commands
+
+```bash
+pnpm setup                  # One-time dev setup
+pnpm build                  # Build everything
+pnpm watch                  # Watch mode for development
+pnpm build:local            # Build, package, and install locally
+pnpm build:local --no-reload  # Same, but skip auto-reload
+pnpm package                # Create .vsix package
+```
+
+### Testing in VS Code
+
+**Option A: Extension Development Host** (recommended for debugging)
+1. Run `pnpm watch`
+2. Press F5 in VS Code to launch Extension Development Host
+3. Open a `.cgraph` file in the new window
+
+**Option B: Local Installation** (quick testing)
+```bash
+pnpm build:local            # Auto-detects VS Code vs Cursor
+pnpm build:local:cursor     # Force Cursor
+pnpm build:local:code       # Force VS Code
+```
+
+### Auto-Reload (macOS)
+
+The `build:local` script can automatically reload your editor window after installation. This requires macOS Accessibility permission for your terminal app.
+
+If you see the permission prompt:
+1. Open **System Settings > Privacy & Security > Accessibility**
+2. Add your terminal app (Terminal, iTerm, Warp, etc.)
+
+Or use `pnpm build:local --no-reload` and manually reload with `Cmd+Shift+P > Reload Window`.
+
 ### Project Structure
 
 ```
@@ -132,15 +177,10 @@ codetographer/
 │           └── useVSCodeApi.ts
 ├── skill/              # Claude Code skill
 │   └── SKILL.md
+├── scripts/            # Build utilities
+│   ├── setup.sh        # One-time dev setup
+│   └── build-local.sh  # Build & install locally
 └── example.cgraph      # Example graph file
-```
-
-### Commands
-
-```bash
-npm run build    # Build everything
-npm run watch    # Watch mode for development
-npm run package  # Create .vsix package
 ```
 
 ### Publishing to VS Code Marketplace
@@ -149,14 +189,8 @@ To publish to the VS Code Marketplace:
 
 1. Create a publisher at https://marketplace.visualstudio.com/manage
 2. Update `extension/package.json` and replace `"publisher": "your-publisher-id"` with your publisher ID
-3. Run `npm run package` to create the `.vsix` file
+3. Run `pnpm package` to create the `.vsix` file
 4. Upload via the marketplace or use `vsce publish`
-
-### Testing in VS Code
-
-1. Run `npm run watch`
-2. Press F5 in VS Code to launch Extension Development Host
-3. Open a `.cgraph` file in the new window
 
 ### Testing in Browser (Standalone)
 
