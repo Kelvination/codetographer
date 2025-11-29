@@ -2,57 +2,88 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Interactive code flow visualization for VS Code.
+Ask your AI assistant how something works. Get a visual map that links back to the code.
 
-## Features
+![Codetographer demo](assets/demo.gif)
 
-- **Custom `.cgraph` file format** - JSON-based format for storing code graphs with precise file/line locations
-- **Interactive graph visualization** - Uses React Flow for beautiful, navigable diagrams
-- **Click-to-navigate** - Cmd+Click (Ctrl+Click) any node to jump to that code location
-- **Connection highlighting** - Click a node to see its connected nodes highlighted
-- **Claude Code skill** - Automatically generate graphs from natural language queries
+## What is this?
 
-## Installation
+Understanding unfamiliar codebases is hard. You ask your AI "how does authentication work?" and get back a wall of text explaining different files and functions. By the time you've read through it, you've forgotten where it started.
+
+Codetographer takes a different approach. Instead of text explanations, your AI generates an interactive visual map of the code flow. Each node in the graph represents a real function or class in your codebase, and clicking it takes you directly to that code.
+
+The workflow is simple: install the extension, give your AI assistant the skill file, then ask questions like you normally would. When you ask "how does X work?", you get a `.cgraph` file that opens as a navigable diagram.
+
+## Getting Started
+
+### Install the Extension
 
 ```bash
-# Install dependencies (pnpm recommended, npm/yarn also work)
-pnpm install
-
-# One-time setup (installs vsce CLI if needed, runs initial build)
-pnpm setup
-
-# Build and install locally (auto-detects VS Code or Cursor)
-pnpm build:local
+git clone https://github.com/Kelvination/codetographer.git
+cd codetographer
+pnpm install        # or npm/yarn
+pnpm setup          # one-time setup
+pnpm build:local    # build and install
 ```
 
-> **Note:** This project uses workspaces - only run `install` at the root level. The `extension/` and `webview/` dependencies are handled automatically.
+> Marketplace release coming soon.
 
-## Usage
+### Add the AI Skill
 
-### Opening a Graph
+**For Claude Code:**
+```bash
+mkdir -p .claude/skills
+cp path/to/codetographer/skill/SKILL.md .claude/skills/codetographer.md
+```
 
-1. Create a `.cgraph` file (see format below)
-2. Open it in VS Code - it will automatically render as an interactive graph
+**For other AI assistants:**
+Use [`skill/SKILL.md`](skill/SKILL.md) as a prompt or system instruction. The skill tells the AI how to generate `.cgraph` files when you ask about code architecture.
 
-### Interacting with the Graph
+### Try it
 
-- **Click a node**: Highlights all connected nodes (dims unconnected ones)
-- **Cmd+Click / Ctrl+Click a node**: Opens the file and jumps to that line
-- **Scroll/pinch**: Zoom in and out
-- **Drag**: Pan around the graph
-- **Controls (bottom-left)**: Zoom in/out, fit to view
-
-### Using the Claude Code Skill
-
-Copy `skill/SKILL.md` to your project's `.claude/skills/codetographer/` directory.
-
-Then ask Claude Code things like:
+Once set up, ask your AI things like:
 
 - "How does user authentication work?"
 - "Show me the data flow for order processing"
 - "Create a graph of the API routes"
 
-## `.cgraph` File Format
+The AI will create a `.cgraph` file that automatically opens as an interactive graph.
+
+## How It Works
+
+### The basics
+
+1. You ask your AI assistant a question about how something in the code works
+2. The AI analyzes the relevant code and creates a `.cgraph` file
+3. VS Code opens the file and renders it as an interactive graph
+4. Each node links to the actual code—click to jump there
+
+### Under the hood
+
+`.cgraph` files are JSON documents containing:
+- **Nodes**: Functions, classes, or modules with labels, descriptions, and file locations (path + line numbers)
+- **Edges**: Relationships between nodes (calls, imports, extends, etc.)
+- **Layout**: Direction and grouping hints
+
+When you Cmd+Click (Ctrl+Click) a node, the extension tells VS Code to open that file at the exact line. The graph layout is computed automatically using [ELK.js](https://github.com/kieler/elkjs).
+
+## Interacting with Graphs
+
+| Action | Result |
+|--------|--------|
+| Click a node | Highlights connected nodes, dims others |
+| Cmd+Click / Ctrl+Click | Opens file at that code location |
+| Click the `+` button | Expands the node's full description |
+| Drag | Pan around the graph |
+| Scroll / pinch | Zoom in and out |
+| Bottom-left controls | Zoom buttons, fit to view |
+
+## The .cgraph Format
+
+<details>
+<summary><strong>Schema Reference</strong> (click to expand)</summary>
+
+### Basic Structure
 
 ```json
 {
@@ -60,194 +91,144 @@ Then ask Claude Code things like:
   "metadata": {
     "title": "Graph Title",
     "description": "What this graph shows",
-    "generated": "2025-11-25T00:00:00Z",
+    "generated": "2025-01-01T00:00:00Z",
     "scope": "src/relevant/path"
   },
-  "nodes": [
-    {
-      "id": "unique-id",
-      "label": "functionName()",
-      "type": "function",
-      "description": "What this does",
-      "location": {
-        "file": "src/path/to/file.ts",
-        "startLine": 42,
-        "endLine": 67
-      }
-    }
-  ],
-  "edges": [
-    {
-      "id": "edge-1",
-      "source": "source-node-id",
-      "target": "target-node-id",
-      "type": "calls",
-      "label": "optional description"
-    }
-  ],
+  "nodes": [...],
+  "edges": [...],
+  "groups": [...],
   "layout": {
+    "type": "layered",
     "direction": "TB"
-  }
+  },
+  "legend": {...}
 }
 ```
 
-### Node Types
+### Nodes
 
-- `function` - Named functions
-- `method` - Class methods
-- `class` - Class definitions
-- `module` - Files as logical units
-- `file` - File-level grouping
+```json
+{
+  "id": "unique-id",
+  "label": "functionName()",
+  "type": "function",
+  "description": "What this does",
+  "location": {
+    "file": "src/path/to/file.ts",
+    "startLine": 42,
+    "endLine": 67
+  },
+  "group": "optional-group-id"
+}
+```
 
-### Edge Types
+**Node types:** `function`, `method`, `class`, `module`, `file`
 
-- `calls` - Function/method invocation
-- `imports` - Module import
-- `extends` - Class inheritance
-- `implements` - Interface implementation
-- `uses` - General dependency
+### Edges
 
-### Layout Directions
+```json
+{
+  "id": "edge-1",
+  "source": "source-node-id",
+  "target": "target-node-id",
+  "type": "calls",
+  "importance": "primary",
+  "color": "#ff6b6b"
+}
+```
 
-- `TB` - Top to bottom (default)
-- `LR` - Left to right
-- `BT` - Bottom to top
-- `RL` - Right to left
+**Edge types:** `calls`, `imports`, `extends`, `implements`, `uses`
+
+**Importance levels:** `primary` (thick), `secondary` (normal), `tertiary` (thin)
+
+### Groups
+
+Groups create visual sections for organizing related nodes:
+
+```json
+{
+  "id": "api-layer",
+  "label": "API Layer",
+  "description": "HTTP request handlers"
+}
+```
+
+Assign nodes to groups with the `group` field.
+
+### Layout Options
+
+**Types:**
+- `layered` (default): Hierarchical tree, good for call flows
+- `force`: Compact web layout, good for interconnected systems
+- `stress`: Even spacing, good for general relationships
+
+**Directions** (for layered): `TB` (top-bottom), `LR` (left-right), `BT`, `RL`
+
+### Legend
+
+```json
+"legend": {
+  "title": "Data Flow",
+  "items": [
+    { "color": "#ff6b6b", "label": "Write operations" },
+    { "color": "#4ecdc4", "label": "Read operations" }
+  ]
+}
+```
+
+</details>
 
 ## Development
 
 ### Quick Start
 
 ```bash
-pnpm install           # One-time
-pnpm setup             # Installs vsce, runs initial build
-pnpm build:local       # Build & install locally
+pnpm install        # install dependencies
+pnpm setup          # one-time setup (installs vsce)
+pnpm build:local    # build, package, and install locally
 ```
 
 ### Commands
 
-```bash
-pnpm setup                  # One-time dev setup
-pnpm build                  # Build everything
-pnpm watch                  # Watch mode for development
-pnpm build:local            # Build, package, and install locally
-pnpm build:local --no-reload  # Same, but skip auto-reload
-pnpm package                # Create .vsix package
-```
+| Command | Description |
+|---------|-------------|
+| `pnpm setup` | One-time dev setup |
+| `pnpm build` | Build extension and webview |
+| `pnpm build:local` | Build, package, and install to VS Code/Cursor |
+| `pnpm package` | Create `.vsix` package |
 
-### Testing in VS Code
+### Testing
 
-**Option A: Extension Development Host** (recommended for debugging)
-1. Run `pnpm watch`
-2. Press F5 in VS Code to launch Extension Development Host
-3. Open a `.cgraph` file in the new window
+**Quick testing:** Run `pnpm build:local` to build and install. The script auto-detects VS Code vs Cursor and can reload your window automatically.
 
-**Option B: Local Installation** (quick testing)
-```bash
-pnpm build:local            # Auto-detects VS Code vs Cursor
-pnpm build:local:cursor     # Force Cursor
-pnpm build:local:code       # Force VS Code
-```
-
-### Auto-Reload (macOS)
-
-The `build:local` script can automatically reload your editor window after installation. This requires macOS Accessibility permission for your terminal app.
-
-If you see the permission prompt:
-1. Open **System Settings > Privacy & Security > Accessibility**
-2. Add your terminal app (Terminal, iTerm, Warp, etc.)
-
-Or use `pnpm build:local --no-reload` and manually reload with `Cmd+Shift+P > Reload Window`.
+**Debugging:** Use VS Code's Run and Debug panel → select "Run Extension (Watch)". This launches an Extension Development Host with automatic rebuilds.
 
 ### Project Structure
 
 ```
 codetographer/
-├── extension/          # VS Code extension
+├── extension/          # VS Code extension (TypeScript)
 │   ├── src/
 │   │   ├── extension.ts
 │   │   └── cgraphEditorProvider.ts
 │   └── media/          # Built webview assets
-├── webview/            # React app for rendering
+├── webview/            # React app for graph rendering
 │   └── src/
 │       ├── components/
 │       │   ├── GraphCanvas.tsx
 │       │   └── CodeNode.tsx
 │       └── hooks/
-│           └── useVSCodeApi.ts
-├── skill/              # Claude Code skill
+├── skill/              # AI skill for generating graphs
 │   └── SKILL.md
-├── scripts/            # Build utilities
-│   ├── setup.sh        # One-time dev setup
-│   └── build-local.sh  # Build & install locally
-└── example.cgraph      # Example graph file
+└── scripts/            # Build utilities
 ```
 
 ### Publishing to VS Code Marketplace
 
-To publish to the VS Code Marketplace:
-
 1. Create a publisher at https://marketplace.visualstudio.com/manage
-2. Update `extension/package.json` and replace `"publisher": "your-publisher-id"` with your publisher ID
-3. Run `pnpm package` to create the `.vsix` file
-4. Upload via the marketplace or use `vsce publish`
-
-### Testing in Browser (Standalone)
-
-You can test graph rendering in a browser without VS Code. This is useful for:
-- Rapid iteration on graph layout and styling
-- Automated screenshot testing
-- Viewing graphs without the extension installed
-
-#### One-time setup
-
-```bash
-cd webview
-npm install
-npm run build:test
-cd ..
-npm install puppeteer  # For automated screenshots
-```
-
-#### Open a graph in Chrome
-
-```bash
-# Build the HTML file with embedded graph data
-node scripts/build-test-html.js path/to/your.cgraph
-
-# Open in browser
-open test-output/your.html           # macOS
-xdg-open test-output/your.html       # Linux
-start test-output/your.html          # Windows
-```
-
-The browser version uses the same React Flow + ELK.js renderer as the VS Code extension, so it looks identical.
-
-#### Take automated screenshots
-
-```bash
-node scripts/screenshot-graph.js path/to/your.cgraph
-# Screenshot saved to test-screenshots/
-```
-
-This uses Puppeteer to render the graph headlessly and capture a PNG.
-
-#### Example test graphs
-
-```bash
-# Simple 3-node graph with legend
-node scripts/screenshot-graph.js test-output/legend.cgraph
-
-# Full demo with groups, all node types, edge importance, colors
-node scripts/screenshot-graph.js test-output/full-demo.cgraph
-```
-
-### Test Files
-
-- `test-output/legend.cgraph` - Simple graph demonstrating custom colors and legend
-- `test-output/full-demo.cgraph` - Complete demo with 20 nodes, 4 groups, all features
-- `test-output/app/` - Built standalone React app (generated by `build:test`)
-- `test-screenshots/` - Generated PNG screenshots
+2. Update `"publisher"` in `extension/package.json` with your publisher ID
+3. Run `pnpm package` to create the `.vsix`
+4. Upload via the marketplace or run `vsce publish`
 
 ## License
 

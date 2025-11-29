@@ -52,14 +52,7 @@ This command:
 
 ## Development Workflow
 
-### Option A: Extension Development Host (Recommended for Debugging)
-
-1. Run `pnpm watch` in a terminal
-2. Press **F5** in VS Code to launch the Extension Development Host
-3. Open a `.cgraph` file in the new window
-4. Changes auto-rebuild; use **Cmd+R** to reload the dev host
-
-### Option B: Local Installation (Quick Testing)
+### Local Installation (Primary)
 
 ```bash
 pnpm build:local              # Auto-detects VS Code vs Cursor
@@ -67,6 +60,14 @@ pnpm build:local:cursor       # Force Cursor
 pnpm build:local:code         # Force VS Code
 pnpm build:local --no-reload  # Skip auto-reload
 ```
+
+### Extension Development Host (For Debugging)
+
+1. Open the Run and Debug panel in VS Code
+2. Select **"Run Extension (Watch)"** from the dropdown
+3. Press **F5** to launch the Extension Development Host
+4. Open a `.cgraph` file in the new window
+5. Changes auto-rebuild; use **Cmd+R** to reload the dev host
 
 ## Auto-Reload Permission (macOS)
 
@@ -84,17 +85,46 @@ pnpm build:local --no-reload
 ```
 Then manually reload with **Cmd+Shift+P > Reload Window**.
 
-## Testing in Browser
+## Testing in Browser (Standalone)
 
-You can test graph rendering without VS Code:
+You can test graph rendering in a browser without VS Code. This is useful for:
+- Rapid iteration on graph layout and styling
+- Automated screenshot testing
+- AI-assisted development workflows
+
+### Setup
 
 ```bash
 cd webview
 pnpm build:test
 cd ..
-node scripts/build-test-html.js test-output/full-demo.cgraph
-open test-output/full-demo.html
+pnpm install puppeteer  # Optional: for automated screenshots
 ```
+
+### View a Graph in Browser
+
+```bash
+node scripts/build-test-html.js path/to/your.cgraph
+open test-output/your.html           # macOS
+xdg-open test-output/your.html       # Linux
+start test-output/your.html          # Windows
+```
+
+The browser version uses the same React Flow + ELK.js renderer as the VS Code extension.
+
+### Automated Screenshots
+
+```bash
+node scripts/screenshot-graph.js path/to/your.cgraph
+# Screenshot saved to test-screenshots/
+```
+
+Uses Puppeteer to render the graph headlessly and capture a PNG.
+
+### Test Files
+
+- `test-output/legend.cgraph` - Simple graph with custom colors and legend
+- `test-output/full-demo.cgraph` - Complete demo with groups, all node types, edge importance
 
 ## Project Structure
 
@@ -118,7 +148,6 @@ codetographer/
 |---------|-------------|
 | `pnpm setup` | One-time setup (installs vsce, builds) |
 | `pnpm build` | Build everything |
-| `pnpm watch` | Watch mode for development |
 | `pnpm build:local` | Build, package, and install locally |
 | `pnpm package` | Create `.vsix` package |
 
