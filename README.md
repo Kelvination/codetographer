@@ -223,13 +223,6 @@ codetographer/
 └── scripts/            # Build utilities
 ```
 
-### Publishing to VS Code Marketplace
-
-1. Create a publisher at https://marketplace.visualstudio.com/manage
-2. Update `"publisher"` in `extension/package.json` with your publisher ID
-3. Run `pnpm package` to create the `.vsix`
-4. Upload via the marketplace or run `vsce publish`
-
 ## License
 
 Apache 2.0 - see [LICENSE](LICENSE) for details.
