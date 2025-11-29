@@ -5,7 +5,7 @@ Thanks for your interest in contributing! Here's how to get started.
 ## Quick Start
 
 ```bash
-git clone https://github.com/your-username/codetographer.git
+git clone https://github.com/Kelvination/codetographer.git
 cd codetographer
 pnpm install        # Or npm install / yarn install
 pnpm setup          # Installs vsce, runs initial build

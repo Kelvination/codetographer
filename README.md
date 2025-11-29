@@ -1,6 +1,6 @@
 # Codetographer
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 Interactive code flow visualization for VS Code.
 
@@ -251,4 +251,4 @@ node scripts/screenshot-graph.js test-output/full-demo.cgraph
 
 ## License
 
-MIT
+Apache 2.0 - see [LICENSE](LICENSE) for details.

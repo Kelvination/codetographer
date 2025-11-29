@@ -4,6 +4,22 @@
   "description": "Interactive code flow visualization with navigable graphs",
   "version": "0.1.0",
   "publisher": "your-publisher-id",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kelvination/codetographer.git"
+  },
+  "homepage": "https://github.com/Kelvination/codetographer#readme",
+  "bugs": {
+    "url": "https://github.com/Kelvination/codetographer/issues"
+  },
+  "keywords": [
+    "visualization",
+    "code-graph",
+    "architecture",
+    "diagram",
+    "flow"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
