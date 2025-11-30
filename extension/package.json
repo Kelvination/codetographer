@@ -2,7 +2,7 @@
   "name": "codetographer",
   "displayName": "Codetographer",
   "description": "Interactive code flow visualization with navigable graphs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "KelvinNewton",
   "icon": "icon.png",
   "license": "Apache-2.0",
@@ -68,8 +68,13 @@
     "languages": [
       {
         "id": "cgraph",
-        "aliases": ["Codetograph", "cgraph"],
-        "extensions": [".cgraph"],
+        "aliases": [
+          "Codetograph",
+          "cgraph"
+        ],
+        "extensions": [
+          ".cgraph"
+        ],
         "configuration": "./language-configuration.json"
       }
     ]
