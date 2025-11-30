@@ -4,7 +4,7 @@
 
 Ask your AI assistant how something works. Get a visual map that links back to the code.
 
-![Codetographer demo](https://raw.githubusercontent.com/Kelvination/codetographer/main/assets/demo.gif)
+![Codetographer demo](https://raw.githubusercontent.com/Kelvination/codetographer/main/examples/demo.gif)
 
 ## What is this?
 
