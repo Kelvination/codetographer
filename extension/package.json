@@ -4,6 +4,7 @@
   "description": "Interactive code flow visualization with navigable graphs",
   "version": "0.1.0",
   "publisher": "KelvinNewton",
+  "icon": "icon.png",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
